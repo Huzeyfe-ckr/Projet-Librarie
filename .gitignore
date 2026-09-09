@@ -10,7 +10,5 @@
 ###< symfony/framework-bundle ###
 
 ### .env files
-.env*
-!.env.example
-!.env.dist
+.env.*
 
