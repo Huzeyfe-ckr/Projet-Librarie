@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Entity;
 
 use App\Repository\UserRepository;
@@ -7,37 +6,37 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[UniqueEntity(fields: ['email'], message: 'Cet email est déjà utilisé.')]
+#[UniqueEntity(fields: ['username'], message: 'Ce nom d\'utilisateur est déjà pris.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-
-
-    
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-    
-    #[ORM\Column(length: 180)]
+
+    #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
-    
+
     /**
      * @var list<string> The user roles
-    */
+     */
     #[ORM\Column]
     private array $roles = [];
-    
+
     /**
      * @var string The hashed password
-    */
-    #[ORM\Column(length: 255, unique: true)]
-    private ?string $username = null;
+     */
     #[ORM\Column]
     private ?string $password = null;
+
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $username = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $avatarUrl = null;
@@ -156,13 +155,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
+     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them.
      */
     public function __serialize(): array
     {
         $data = (array) $this;
         $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
-        
+
         return $data;
     }
 
@@ -271,7 +270,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeExchange(Exchange $exchange): static
     {
         if ($this->exchanges->removeElement($exchange)) {
-            // set the owning side to null (unless already changed)
             if ($exchange->getRequester() === $this) {
                 $exchange->setRequester(null);
             }
@@ -301,7 +299,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeSentMessage(Message $sentMessage): static
     {
         if ($this->sentMessages->removeElement($sentMessage)) {
-            // set the owning side to null (unless already changed)
             if ($sentMessage->getSender() === $this) {
                 $sentMessage->setSender(null);
             }
@@ -331,7 +328,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeComment(Comment $comment): static
     {
         if ($this->comments->removeElement($comment)) {
-            // set the owning side to null (unless already changed)
             if ($comment->getUser() === $this) {
                 $comment->setUser(null);
             }
@@ -361,7 +357,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeWishlistItem(Wishlist $wishlistItem): static
     {
         if ($this->wishlistItems->removeElement($wishlistItem)) {
-            // set the owning side to null (unless already changed)
             if ($wishlistItem->getUser() === $this) {
                 $wishlistItem->setUser(null);
             }

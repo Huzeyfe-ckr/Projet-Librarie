@@ -29,8 +29,6 @@ class BookPage
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $inactivatedAt = null;
-
-    #[ORM\UniqueConstraint(columns: ['book_id', 'page_order'])]
     
     public function getId(): ?int
     {

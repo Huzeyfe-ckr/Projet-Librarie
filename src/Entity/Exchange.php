@@ -34,8 +34,6 @@ class Exchange
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $completedAt = null;
 
-    #[ORM\UniqueConstraint(columns: ['announcement_id', 'requester_id'])]
-
 
     /**
      * @var Collection<int, Message>

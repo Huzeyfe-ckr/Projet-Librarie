@@ -26,7 +26,6 @@ class Wishlist
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $inactivatedAt = null;
 
-    #[ORM\UniqueConstraint(columns: ['user_id', 'book_id'])]
 
 
     public function getId(): ?int
