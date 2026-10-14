@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+
 use App\Enum\ExchangeStatus;
 use App\Repository\ExchangeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
