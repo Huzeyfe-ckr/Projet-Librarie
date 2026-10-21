@@ -48,9 +48,10 @@
         <div class="stat"><strong>{{ stats.users }}</strong><span>Membres</span></div>
     </section>
 
-    <section>
+        <section>
         <div class="section-title">
             <h2>Dernières annonces</h2>
+            <a href="{{ path('announcement_index') }}">Voir toutes les annonces →</a>
         </div>
 
         {% if latestAnnouncements is empty %}
@@ -58,10 +59,10 @@
         {% else %}
             <div class="grid">
                 {% for announcement in latestAnnouncements %}
-                    <article class="card">
-                        <h3>Annonce #{{ announcement.id }}</h3>
-                        <p>Les détails s'afficheront ici.</p>
-                    </article>
+                    {% include 'announcement/_card.html.twig' with {
+                        announcement: announcement,
+                        books: booksByAnnouncement[announcement.id] ?? []
+                    } %}
                 {% endfor %}
             </div>
         {% endif %}

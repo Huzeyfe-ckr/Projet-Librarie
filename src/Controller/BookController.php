@@ -56,7 +56,7 @@ class BookController extends AbstractController
 
             $this->addFlash('success', 'Ton livre a bien été publié.');
 
-            return $this->redirectToRoute('app_home');
+            return $this->redirectToRoute('announcement_show', ['id' => $announcement->getId()]);
         }
 
         return $this->render('book/new.html.twig', [

@@ -35,6 +35,25 @@
         .flash { padding: 12px 16px; border-radius: 8px; margin: 16px 0; background: #e6f4ee; color: #1d5a45; }
         .flash-error { background: #fbe9e9; color: #8a2b2b; }
 
+        .section-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
+        .section-title h1, .section-title h2 { margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .card h3 { margin: 10px 0 6px; }
+        .card p { margin: 6px 0; }
+        .empty { text-align: center; color: var(--muted); padding: 40px; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
+        .meta { color: var(--muted); font-size: .9rem; }
+        .card-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; background: #eef3f1; color: var(--primary); font-weight: 600; }
+        .badge-price { background: #fdf1dc; color: #8a5a00; }
+        .search-form { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+        .search-form input { flex: 1; min-width: 220px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; }
+        .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 30px; }
+        .detail { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 30px; margin-top: 12px; }
+        .detail h1 { margin: 12px 0 4px; }
+        .book-box { border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+        .book-box ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+
         footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--border); color: var(--muted); text-align: center; font-size: .9rem; }
     </style>
     {% block stylesheets %}{% endblock %}
@@ -46,13 +65,14 @@
 
             <nav class="nav-links">
                 <a href="{{ path('app_home') }}">Accueil</a>
+                <a href="{{ path('announcement_index') }}">Annonces</a>
 
                 {% if is_granted('ROLE_ADMIN') %}
                     <a href="/admin">Administration</a>
                 {% endif %}
 
                 {% if app.user %}
-                <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
+                    <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
                     <span>Bonjour, <strong>{{ app.user.username }}</strong></span>
                     <a href="{{ path('app_logout') }}" class="btn btn-outline">Déconnexion</a>
                 {% else %}

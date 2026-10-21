@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ announcement.title }}{% endblock %}
+
+{% block body %}
+    <p style="margin-top: 24px;"><a href="{{ path('announcement_index') }}">← Retour aux annonces</a></p>
+
+    {% if announcement.inactivatedAt %}
+        <div class="flash flash-error">
+            Cette annonce est désactivée depuis le {{ announcement.inactivatedAt|date('d/m/Y') }}. Seuls les administrateurs peuvent la voir.
+        </div>
+    {% endif %}
+
+    <article class="detail">
+        <div class="card-badges">
+            <span class="badge">{{ announcement.type.name }}</span>
+            <span class="badge">{{ announcement.status.name }}</span>
+            {% if announcement.price is not null %}
+                <span class="badge badge-price">{{ announcement.price|number_format(2, ',', ' ') }} €</span>
+            {% endif %}
+        </div>
+
+        <h1>{{ announcement.title }}</h1>
+        <p class="meta">Publiée par <strong>{{ announcement.user.username }}</strong> le {{ announcement.createdAt|date('d/m/Y') }}</p>
+
+        <h2>Description</h2>
+        {% if announcement.description %}
+            <p>{{ announcement.description|nl2br }}</p>
+        {% else %}
+            <p class="meta">Aucune description.</p>
+        {% endif %}
+
+        <h2>{{ books|length > 1 ? 'Livres' : 'Livre' }}</h2>
+        {% for book in books %}
+            <div class="book-box">
+                <strong>{{ book.title }}</strong>
+                <ul>
+                    {% if book.author %}<li>Auteur : {{ book.author }}</li>{% endif %}
+                    {% if book.genre %}<li>Genre : {{ book.genre }}</li>{% endif %}
+                    {% if book.isbn %}<li>ISBN : {{ book.isbn }}</li>{% endif %}
+                    <li>État : {{ book.bookCondition.name }}</li>
+                </ul>
+            </div>
+        {% else %}
+            <p class="meta">Aucun livre actif rattaché à cette annonce.</p>
+        {% endfor %}
+    </article>
+{% endblock %}
