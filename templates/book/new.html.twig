@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Publier un livre{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .form-box { max-width: 640px; margin: 40px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 30px; }
+    .form-box h1 { margin-top: 0; }
+    .form-box label { display: block; margin: 16px 0 6px; font-weight: 600; }
+    .form-box input:not([type=checkbox]):not([type=file]), .form-box textarea, .form-box select {
+        width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit;
+    }
+    .form-box textarea { min-height: 120px; }
+    .form-box ul { color: #8a2b2b; padding-left: 18px; margin: 6px 0 0; }
+    .form-box button { margin-top: 24px; }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="form-box">
+        <h1>Publier un livre</h1>
+
+        {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <button type="submit" class="btn btn-primary">Publier</button>
+            <a href="{{ path('app_home') }}" class="btn btn-outline">Annuler</a>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

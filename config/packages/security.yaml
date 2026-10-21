@@ -17,16 +17,13 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            form_login:
-                login_path: app_login
-                check_path: app_login
-                default_target_path: admin # <-- Redirige vers /admin après la connexion
-                enable_csrf: true
+            custom_authenticator: App\Security\LoginFormAuthenticator
             logout:
                 path: app_logout
                 target: app_login # <-- Redirige vers le login après la déconnexion
 
     access_control:
+    - { path: ^/(login|register)$, roles: PUBLIC_ACCESS }
     - { path: ^/admin, roles: ROLE_ADMIN }
 
 when@test:

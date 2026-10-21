@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil — BookShare{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .hero { text-align: center; padding: 70px 0 50px; }
+    .hero h1 { font-size: 2.6rem; margin: 0 0 12px; }
+    .hero p { color: var(--muted); font-size: 1.15rem; max-width: 600px; margin: 0 auto 28px; }
+    .hero .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0 50px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; text-align: center; }
+    .stat strong { display: block; font-size: 2rem; color: var(--primary); }
+    .stat span { color: var(--muted); }
+
+    .section-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+    .section-title h2 { margin: 0; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .card h3 { margin: 0 0 6px; }
+    .card p { margin: 0; color: var(--muted); }
+    .empty { text-align: center; color: var(--muted); padding: 40px; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
+
+    @media (max-width: 640px) { .stats { grid-template-columns: 1fr; } .hero h1 { font-size: 2rem; } }
+</style>
+{% endblock %}
+
+{% block body %}
+    <section class="hero">
+        {% if app.user %}
+            <h1>Bon retour, {{ app.user.username }} 👋</h1>
+            <p>Découvre les derniers livres proposés ou mets le tien à disposition.</p>
+        {% else %}
+            <h1>Donne une seconde vie à tes livres</h1>
+            <p>Offre, vends ou échange tes livres avec d'autres lecteurs, et trouve ta prochaine lecture.</p>
+            <div class="actions">
+                <a href="{{ path('app_register') }}" class="btn btn-primary">Créer un compte</a>
+                <a href="{{ path('app_login') }}" class="btn btn-outline">Se connecter</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="stats">
+        <div class="stat"><strong>{{ stats.announcements }}</strong><span>Annonces</span></div>
+        <div class="stat"><strong>{{ stats.books }}</strong><span>Livres</span></div>
+        <div class="stat"><strong>{{ stats.users }}</strong><span>Membres</span></div>
+    </section>
+
+    <section>
+        <div class="section-title">
+            <h2>Dernières annonces</h2>
+        </div>
+
+        {% if latestAnnouncements is empty %}
+            <div class="empty">Aucune annonce pour le moment.</div>
+        {% else %}
+            <div class="grid">
+                {% for announcement in latestAnnouncements %}
+                    <article class="card">
+                        <h3>Annonce #{{ announcement.id }}</h3>
+                        <p>Les détails s'afficheront ici.</p>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

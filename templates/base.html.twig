@@ -1,23 +1,82 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-        {% block stylesheets %}
-        {% endblock %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}BookShare{% endblock %}</title>
+    <style>
+        :root {
+            --bg: #faf8f5;
+            --card: #ffffff;
+            --text: #2b2b2b;
+            --muted: #6b6b6b;
+            --primary: #2f6f5e;
+            --primary-dark: #245748;
+            --border: #e6e1d9;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        a { color: var(--primary); text-decoration: none; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
-        {% block javascripts %}
-        {% endblock %}
+        .navbar { background: var(--card); border-bottom: 1px solid var(--border); }
+        .navbar .container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+        .brand { font-weight: 700; font-size: 1.25rem; color: var(--primary); }
+        .nav-links { display: flex; align-items: center; gap: 18px; }
+        .nav-links a { color: var(--text); }
+        .nav-links a:hover { color: var(--primary); }
 
-        {% set frankenphp_hot_reload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
-        {% if frankenphp_hot_reload %}
-        <meta name="frankenphp-hot-reload:url" content="{{ frankenphp_hot_reload }}">
-        <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
-        <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
-        {% endif %}
-    </head>
-    <body>
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: 2px solid var(--primary); cursor: pointer; }
+        .btn-primary { background: var(--primary); color: #fff !important; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-outline { background: transparent; color: var(--primary) !important; }
+        .btn-outline:hover { background: var(--primary); color: #fff !important; }
+
+        .flash { padding: 12px 16px; border-radius: 8px; margin: 16px 0; background: #e6f4ee; color: #1d5a45; }
+        .flash-error { background: #fbe9e9; color: #8a2b2b; }
+
+        footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--border); color: var(--muted); text-align: center; font-size: .9rem; }
+    </style>
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    <header class="navbar">
+        <div class="container">
+            <a href="{{ path('app_home') }}" class="brand">📚 BookShare</a>
+
+            <nav class="nav-links">
+                <a href="{{ path('app_home') }}">Accueil</a>
+
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="/admin">Administration</a>
+                {% endif %}
+
+                {% if app.user %}
+                <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
+                    <span>Bonjour, <strong>{{ app.user.username }}</strong></span>
+                    <a href="{{ path('app_logout') }}" class="btn btn-outline">Déconnexion</a>
+                {% else %}
+                    <a href="{{ path('app_login') }}">Connexion</a>
+                    <a href="{{ path('app_register') }}" class="btn btn-primary">Inscription</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="flash {{ label == 'error' or label == 'danger' ? 'flash-error' : '' }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
         {% block body %}{% endblock %}
-    </body>
+    </main>
+
+    <footer>
+        <div class="container">© {{ 'now'|date('Y') }} BookShare — donne et trouve des livres</div>
+    </footer>
+
+    {% block javascripts %}{% endblock %}
+</body>
 </html>
