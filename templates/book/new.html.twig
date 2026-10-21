@@ -1,29 +1,104 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Publier un livre{% endblock %}
+{% block title %}Publier un livre ou un pack{% endblock %}
 
 {% block stylesheets %}
 <style>
-    .form-box { max-width: 640px; margin: 40px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 30px; }
+    .form-box { max-width: 760px; margin: 40px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 30px; }
     .form-box h1 { margin-top: 0; }
-    .form-box label { display: block; margin: 16px 0 6px; font-weight: 600; }
+    .form-box h2 { margin: 28px 0 6px; font-size: 1.15rem; }
+    .form-box label { display: block; margin: 14px 0 6px; font-weight: 600; }
     .form-box input:not([type=checkbox]):not([type=file]), .form-box textarea, .form-box select {
-        width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit;
+        width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; background: #fff;
     }
-    .form-box textarea { min-height: 120px; }
     .form-box ul { color: #8a2b2b; padding-left: 18px; margin: 6px 0 0; }
-    .form-box button { margin-top: 24px; }
+    .form-box .help-text { color: var(--muted); font-size: .85rem; margin: 4px 0 0; }
+    .form-actions { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+
+    .book-entry { border: 1px solid var(--border); border-radius: 10px; padding: 6px 18px 18px; margin: 14px 0; background: #fcfbf9; }
+    .book-entry-header { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .link-danger { background: none; border: none; color: #8a2b2b; cursor: pointer; font-size: .9rem; padding: 0; }
+    .link-danger:hover { text-decoration: underline; }
+    button[disabled] { opacity: .5; cursor: not-allowed; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 640px) { .two-cols { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
 {% block body %}
+    {% set prototype_html %}
+        {% include 'book/_book_entry.html.twig' with {f: form.books.vars.prototype} only %}
+    {% endset %}
+
     <div class="form-box">
-        <h1>Publier un livre</h1>
+        <h1>Publier un livre ou un pack</h1>
+        <p class="meta">Un seul livre, ou plusieurs regroupés sous une même annonce (pack, don en groupe).</p>
 
         {{ form_start(form) }}
-            {{ form_widget(form) }}
-            <button type="submit" class="btn btn-primary">Publier</button>
-            <a href="{{ path('app_home') }}" class="btn btn-outline">Annuler</a>
+            <h2>L'annonce</h2>
+            {{ form_row(form.title) }}
+            {{ form_row(form.type) }}
+            {{ form_row(form.price) }}
+            {{ form_row(form.description) }}
+
+            <h2>Les livres</h2>
+            {{ form_errors(form.books) }}
+
+            <div id="book-list"
+                 data-prototype="{{ prototype_html|e('html_attr') }}"
+                 data-max="{{ maxBooks }}">
+                {% for entry in form.books %}
+                    {% include 'book/_book_entry.html.twig' with {f: entry} only %}
+                {% endfor %}
+            </div>
+            {% do form.books.setRendered %}
+
+            <button type="button" id="add-book" class="btn btn-outline">+ Ajouter un livre au pack</button>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Publier</button>
+                <a href="{{ path('announcement_index') }}" class="btn btn-outline">Annuler</a>
+            </div>
         {{ form_end(form) }}
     </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+    const list = document.getElementById('book-list');
+    const addBtn = document.getElementById('add-book');
+    const max = parseInt(list.dataset.max, 10);
+    // Les index déjà rendus par le serveur sont < 1000 : pas de collision possible
+    let nextIndex = 1000;
+
+    function refresh() {
+        const entries = list.querySelectorAll('[data-book-entry]');
+        entries.forEach(function (entry, i) {
+            entry.querySelector('[data-entry-label]').textContent = 'Livre ' + (i + 1);
+            entry.querySelector('[data-remove-entry]').hidden = entries.length === 1;
+        });
+        addBtn.disabled = entries.length >= max;
+    }
+
+    addBtn.addEventListener('click', function () {
+        const html = list.dataset.prototype.replace(/__name__/g, nextIndex++);
+        const holder = document.createElement('div');
+        holder.innerHTML = html.trim();
+        list.appendChild(holder.firstElementChild);
+        refresh();
+    });
+
+    list.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-remove-entry]');
+        if (!button) return;
+        button.closest('[data-book-entry]').remove();
+        refresh();
+    });
+
+    refresh();
+})();
+</script>
 {% endblock %}

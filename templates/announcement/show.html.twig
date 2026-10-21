@@ -12,8 +12,9 @@
     {% endif %}
 
     <article class="detail">
-        <div class="card-badges">
-            <span class="badge">{{ announcement.type.name }}</span>
+       <div class="card-badges">
+    {% if books|length > 1 %}<span class="badge badge-pack">📦 Pack de {{ books|length }} livres</span>{% endif %}
+    <span class="badge">{{ announcement.type.name }}</span>
             <span class="badge">{{ announcement.status.name }}</span>
             {% if announcement.price is not null %}
                 <span class="badge badge-price">{{ announcement.price|number_format(2, ',', ' ') }} €</span>
@@ -30,7 +31,7 @@
             <p class="meta">Aucune description.</p>
         {% endif %}
 
-        <h2>{{ books|length > 1 ? 'Livres' : 'Livre' }}</h2>
+        <h2>{{ books|length > 1 ? 'Les ' ~ books|length ~ ' livres du pack' : 'Livre' }}</h2>
         {% for book in books %}
             <div class="book-box">
                 <strong>{{ book.title }}</strong>

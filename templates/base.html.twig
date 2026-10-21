@@ -53,6 +53,8 @@
         .detail h1 { margin: 12px 0 4px; }
         .book-box { border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
         .book-box ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+        .badge-pack { background: #e8eefc; color: #2d4a9a; }
+        .pack-list { margin: 8px 0; padding-left: 18px; color: var(--muted); font-size: .92rem; }
 
         footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--border); color: var(--muted); text-align: center; font-size: .9rem; }
     </style>
@@ -72,8 +74,8 @@
                 {% endif %}
 
                 {% if app.user %}
-                    <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
                     <span>Bonjour, <strong>{{ app.user.username }}</strong></span>
+                    <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
                     <a href="{{ path('app_logout') }}" class="btn btn-outline">Déconnexion</a>
                 {% else %}
                     <a href="{{ path('app_login') }}">Connexion</a>

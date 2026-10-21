@@ -1,5 +1,8 @@
 <article class="card announcement-card">
     <div class="card-badges">
+        {% if books|length > 1 %}
+            <span class="badge badge-pack">📦 Pack de {{ books|length }} livres</span>
+        {% endif %}
         <span class="badge">{{ announcement.type.name }}</span>
         {% if announcement.price is not null %}
             <span class="badge badge-price">{{ announcement.price|number_format(2, ',', ' ') }} €</span>
@@ -8,11 +11,20 @@
 
     <h3><a href="{{ path('announcement_show', {id: announcement.id}) }}">{{ announcement.title }}</a></h3>
 
-    {% for book in books %}
-        <p class="meta">
-            {% if book.author %}{{ book.author }} · {% endif %}{{ book.bookCondition.name }}
-        </p>
-    {% endfor %}
+    {% if books|length > 1 %}
+        <ul class="pack-list">
+            {% for book in books|slice(0, 3) %}
+                <li>{{ book.title }}{% if book.author %} — {{ book.author }}{% endif %}</li>
+            {% endfor %}
+            {% if books|length > 3 %}
+                <li>… et {{ books|length - 3 }} autre{{ books|length - 3 > 1 ? 's' : '' }}</li>
+            {% endif %}
+        </ul>
+    {% else %}
+        {% for book in books %}
+            <p class="meta">{% if book.author %}{{ book.author }} · {% endif %}{{ book.bookCondition.name }}</p>
+        {% endfor %}
+    {% endif %}
 
     {% if announcement.description %}
         <p>{{ announcement.description|length > 110 ? announcement.description|slice(0, 110) ~ '…' : announcement.description }}</p>

@@ -3,52 +3,30 @@
 namespace App\Form;
 
 use App\Enum\AnnouncementType;
-use App\Enum\BookCondition;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Form\Extension\Core\Type\EnumType;
-use Symfony\Component\Validator\Constraints\Isbn;
+use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
 
 class BookPublicationType extends AbstractType
 {
+    public const MAX_BOOKS = 100;
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('title', TextType::class, [
-                'label' => 'Titre du livre',
-                'constraints' => [
-                    new NotBlank(message: 'Indique le titre du livre.'),
-                    new Length(max: 255),
-                ],
-            ])
-            ->add('author', TextType::class, [
-                'label' => 'Auteur',
+                'label' => 'Titre de l\'annonce',
                 'required' => false,
+                'help' => 'Obligatoire pour un pack. Avec un seul livre, le titre du livre est repris si tu laisses vide.',
                 'constraints' => [new Length(max: 255)],
-            ])
-            ->add('isbn', TextType::class, [
-                'label' => 'ISBN',
-                'required' => false,
-                'help' => 'Optionnel. 10 ou 13 chiffres, avec ou sans tirets.',
-                'constraints' => [new Isbn()],
-            ])
-            ->add('genre', TextType::class, [
-                'label' => 'Genre',
-                'required' => false,
-                'constraints' => [new Length(max: 255)],
-            ])
-            ->add('bookCondition', EnumType::class, [
-                'class' => BookCondition::class,
-                'label' => 'État du livre',
-                'placeholder' => 'Choisir un état',
-                'constraints' => [new NotBlank(message: 'Indique l\'état du livre.')],
             ])
             ->add('type', EnumType::class, [
                 'class' => AnnouncementType::class,
@@ -60,22 +38,30 @@ class BookPublicationType extends AbstractType
                 'label' => 'Prix',
                 'currency' => 'EUR',
                 'required' => false,
-                'help' => 'Laisse vide pour un don.',
+                'help' => 'Pour un pack, c\'est le prix de l\'ensemble. Ignoré pour un don.',
                 'constraints' => [new PositiveOrZero(message: 'Le prix ne peut pas être négatif.')],
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
                 'required' => false,
-                'attr' => ['rows' => 5],
+                'attr' => ['rows' => 4],
                 'constraints' => [new Length(max: 2000)],
             ])
-        ;
-    }
-
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        // Pas de data_class : le formulaire renvoie un tableau,
-        // le contrôleur construit Announcement et Book.
-        $resolver->setDefaults(['data_class' => null]);
+            ->add('books', CollectionType::class, [
+                'entry_type' => BookItemType::class,
+                'entry_options' => ['label' => false],
+                'label' => false,
+                'allow_add' => true,
+                'allow_delete' => true,
+                'prototype' => true,
+                'constraints' => [
+                    new Count(
+                        min: 1,
+                        max: self::MAX_BOOKS,
+                        minMessage: 'Ajoute au moins un livre.',
+                        maxMessage: 'Un pack contient au maximum {{ limit }} livres.',
+                    ),
+                ],
+            ]);
     }
 }

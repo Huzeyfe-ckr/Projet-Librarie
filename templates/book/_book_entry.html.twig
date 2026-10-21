@@ -1,0 +1,16 @@
+<div class="book-entry" data-book-entry>
+    <div class="book-entry-header">
+        <strong data-entry-label>Livre</strong>
+        <button type="button" class="link-danger" data-remove-entry>Retirer</button>
+    </div>
+
+    {{ form_row(f.title) }}
+    <div class="two-cols">
+        {{ form_row(f.author) }}
+        {{ form_row(f.genre) }}
+    </div>
+    <div class="two-cols">
+        {{ form_row(f.isbn) }}
+        {{ form_row(f.bookCondition) }}
+    </div>
+</div>
