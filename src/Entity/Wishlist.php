@@ -4,8 +4,12 @@ namespace App\Entity;
 
 use App\Repository\WishlistRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: WishlistRepository::class)]
+// Un livre n'apparaît qu'une fois dans la wishlist d'un utilisateur
+#[ORM\UniqueConstraint(name: 'uniq_wishlist_user_book', columns: ['user_id', 'book_id'])]
+#[UniqueEntity(fields: ['user', 'book'], message: 'Ce livre est déjà dans ta wishlist.')]
 class Wishlist
 {
     #[ORM\Id]
@@ -18,6 +22,7 @@ class Wishlist
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'wishlistItems')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Book $book = null;
 
     #[ORM\Column]

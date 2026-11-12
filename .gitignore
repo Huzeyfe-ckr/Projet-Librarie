@@ -12,3 +12,7 @@
 ### .env files
 .env.*
 
+
+### macOS / éditeurs
+.DS_Store
+*.bak

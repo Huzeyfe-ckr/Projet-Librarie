@@ -39,16 +39,20 @@
                     <div id="bottom"></div>
                 </div>
 
-                {{ form_start(form, {attr: {class: 'chat-form form'}}) }}
-                    <div class="chat-form__field">
-                        {{ form_errors(form.content) }}
-                        {{ form_widget(form.content, {attr: {rows: 1, 'data-autogrow': ''}}) }}
-                    </div>
-                    <button type="submit" class="btn btn-primary" aria-label="Envoyer">
-                        Envoyer
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    </button>
-                {{ form_end(form) }}
+                {% if exchange.status.isOpen() %}
+                    {{ form_start(form, {attr: {class: 'chat-form form'}}) }}
+                        <div class="chat-form__field">
+                            {{ form_errors(form.content) }}
+                            {{ form_widget(form.content, {attr: {rows: 1, 'data-autogrow': ''}}) }}
+                        </div>
+                        <button type="submit" class="btn btn-primary" aria-label="Envoyer">
+                            Envoyer
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </button>
+                    {{ form_end(form) }}
+                {% else %}
+                    <p class="chat-closed muted small">Cet échange est clos ({{ ui.exchange_status(exchange.status) }}), tu ne peux plus y répondre.</p>
+                {% endif %}
             </section>
 
             <aside class="panel">

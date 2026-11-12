@@ -22,6 +22,8 @@ security:
             logout:
                 path: app_logout
                 target: app_login # <-- Redirige vers le login après la déconnexion
+                # Refuse la déconnexion sans jeton CSRF (empêche un autre site de déconnecter l'utilisateur)
+                enable_csrf: true
 
     access_control:
     - { path: ^/(login|register)$, roles: PUBLIC_ACCESS }

@@ -39,12 +39,12 @@ class RegistrationFormType extends AbstractType
                 'attr' => ['autocomplete' => 'new-password'],
                 'constraints' => [
                     new NotBlank(message: 'Entre un mot de passe.'),
-                    new Length(
-                        min: 6,
-                        minMessage: 'Ton mot de passe doit faire au moins {{ limit }} caractères.',
-                        max: 4096,
+                    // Longueur max imposée par Symfony pour éviter les attaques par mot de passe géant
+                    new Length(max: 4096),
+                    // Vérifie la robustesse réelle (longueur + variété des caractères), ce qui rend un "min: 6" inutile
+                    new PasswordStrength(
+                        message: 'Ton mot de passe est trop faible : allonge-le ou mélange lettres, chiffres et symboles.',
                     ),
-                    new PasswordStrength(),
                 ],
             ])
         ;

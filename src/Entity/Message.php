@@ -15,9 +15,11 @@ class Message
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'messages')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Exchange $exchange = null;
 
     #[ORM\ManyToOne(inversedBy: 'sentMessages')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?User $sender = null;
 
     #[ORM\Column(type: Types::TEXT)]

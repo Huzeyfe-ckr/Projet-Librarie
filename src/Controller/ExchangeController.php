@@ -121,8 +121,19 @@ class ExchangeController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        // Annonce désactivée (modération) : la conversation n'est plus accessible
+        if (null !== $announcement->getInactivatedAt()) {
+            throw $this->createNotFoundException('Cette annonce n\'est plus disponible.');
+        }
+
         $form = $this->createForm(ExchangeMessageType::class);
         $form->handleRequest($request);
+
+        if ($form->isSubmitted() && !$exchange->getStatus()->isOpen()) {
+            $this->addFlash('error', 'Cet échange est clos, tu ne peux plus y envoyer de message.');
+
+            return $this->redirectToRoute('exchange_show', ['id' => $exchange->getId()]);
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $message = (new Message())

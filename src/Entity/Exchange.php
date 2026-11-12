@@ -2,14 +2,17 @@
 
 namespace App\Entity;
 
-
 use App\Enum\ExchangeStatus;
 use App\Repository\ExchangeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: ExchangeRepository::class)]
+// Une seule demande par utilisateur et par annonce
+#[ORM\UniqueConstraint(name: 'uniq_exchange_announcement_requester', columns: ['announcement_id', 'requester_id'])]
+#[UniqueEntity(fields: ['announcement', 'requester'], message: 'Tu as déjà fait une demande pour cette annonce.')]
 class Exchange
 {
     #[ORM\Id]

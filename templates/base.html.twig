@@ -42,7 +42,10 @@
                     {% import '_partials/ui.html.twig' as ui %}
                     <span class="nav__user">{{ ui.avatar(app.user) }}{{ app.user.username }}</span>
                     <a href="{{ path('book_new') }}" class="btn btn-primary">+ Publier</a>
-                    <a href="{{ path('app_logout') }}" class="btn btn-ghost" title="Déconnexion">Déconnexion</a>
+                    <form method="post" action="{{ path('app_logout') }}" class="nav__logout">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                        <button type="submit" class="btn btn-ghost">Déconnexion</button>
+                    </form>
                 {% else %}
                     <span class="nav__sep"></span>
                     <a href="{{ path('app_login') }}" class="nav__link">Connexion</a>
