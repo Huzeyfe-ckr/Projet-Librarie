@@ -42,6 +42,7 @@ class Book
      * @var Collection<int, BookPage>
      */
     #[ORM\OneToMany(targetEntity: BookPage::class, mappedBy: 'book')]
+    #[ORM\OrderBy(['pageOrder' => 'ASC'])]
     private Collection $pages;
 
     /**
@@ -151,6 +152,22 @@ class Book
     public function getPages(): Collection
     {
         return $this->pages;
+    }
+
+    /**
+     * Photos visibles du livre (non supprimées), dans l'ordre.
+     *
+     * @return BookPage[]
+     */
+    public function getActivePages(): array
+    {
+        return array_values($this->pages->filter(static fn (BookPage $page): bool => null === $page->getInactivatedAt())->toArray());
+    }
+
+    /** URL de la première photo, ou null s'il n'y en a pas (on affiche alors une couverture générée). */
+    public function getCoverUrl(): ?string
+    {
+        return ($this->getActivePages()[0] ?? null)?->getImgUrl();
     }
 
     public function addPage(BookPage $page): static

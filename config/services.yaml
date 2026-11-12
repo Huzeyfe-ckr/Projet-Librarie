@@ -7,6 +7,11 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Images envoyées par les utilisateurs (photos de livres, avatars) : dossier sur le disque et URL publique
+    app.uploads_dir: '%kernel.project_dir%/public/uploads'
+    app.uploads_url: '/uploads'
+    # Expéditeur des emails envoyés par l'application
+    app.mailer_from: 'noreply@bookshare.test'
 
 services:
     # default configuration for services in *this* file
@@ -21,3 +26,14 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+when@test:
+    parameters:
+        # En test, les images envoyées vont dans var/ (jamais dans public/)
+        app.uploads_dir: '%kernel.project_dir%/var/test-uploads'
+
+    services:
+        # Les tests provoquent volontairement des 403/404 : on ne veut pas de ces logs dans la sortie de PHPUnit
+        logger:
+            class: Psr\Log\NullLogger
+

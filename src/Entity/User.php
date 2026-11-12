@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[UniqueEntity(fields: ['email'], message: 'Cet email est déjà utilisé.')]
@@ -37,6 +38,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255, unique: true)]
+    #[Assert\NotBlank(message: 'Choisis un nom d\'utilisateur.')]
+    #[Assert\Length(min: 3, max: 30, minMessage: 'Ton nom d\'utilisateur doit faire au moins {{ limit }} caractères.', maxMessage: '{{ limit }} caractères maximum.')]
+    // Le pseudo apparaît dans l'URL du profil (/users/alice) : lettres, chiffres, point, tiret et tiret bas seulement
+    #[Assert\Regex(pattern: '/^[a-zA-Z0-9._-]+$/', message: 'Utilise seulement des lettres sans accent, des chiffres, « . », « - » ou « _ ».')]
     private ?string $username = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

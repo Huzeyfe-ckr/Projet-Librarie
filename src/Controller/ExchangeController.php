@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Exception\ExchangeException;
 use App\Form\ExchangeMessageType;
 use App\Repository\AnnouncementRepository;
+use App\Repository\BookRepository;
 use App\Repository\ExchangeRepository;
 use App\Repository\MessageRepository;
 use App\Security\Voter\ExchangeVoter;
@@ -66,6 +67,12 @@ class ExchangeController extends AbstractController
 
         $user = $this->getAppUser();
 
+        if (!$user->isVerified()) {
+            $this->addFlash('warning', 'Confirme d\'abord ton adresse email pour faire une demande (lien dans le bandeau en haut de la page).');
+
+            return $back;
+        }
+
         // Une seule demande par utilisateur et par annonce : on renvoie vers la conversation existante
         $existing = $exchanges->findOneBy(['announcement' => $announcement, 'requester' => $user]);
         if (null !== $existing) {
@@ -94,7 +101,7 @@ class ExchangeController extends AbstractController
 
     #[Route('/{id}', name: 'exchange_show', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     #[IsGranted(ExchangeVoter::VIEW, subject: 'exchange')]
-    public function show(Exchange $exchange, Request $request, MessageRepository $messages): Response
+    public function show(Exchange $exchange, Request $request, MessageRepository $messages, BookRepository $books): Response
     {
         $announcement = $exchange->getAnnouncement();
 
@@ -124,6 +131,7 @@ class ExchangeController extends AbstractController
         return $this->render('exchange/show.html.twig', [
             'exchange' => $exchange,
             'announcement' => $announcement,
+            'books' => $books->findActiveByAnnouncements([$announcement])[$announcement->getId()] ?? [],
             'messages' => $messages->findActiveByExchange($exchange),
             'other' => $user->getId() === $requester->getId() ? $announcement->getUser() : $requester,
             'isOwner' => $user->getId() === $announcement->getUser()->getId(),
@@ -140,13 +148,14 @@ class ExchangeController extends AbstractController
         [$attribute, $method, $success] = self::TRANSITIONS[$action];
         $back = $this->redirectToRoute('exchange_show', ['id' => $exchange->getId(), '_fragment' => 'bottom']);
 
+        // D'abord les droits (403 pour qui n'a rien à faire ici), ensuite le jeton CSRF
+        $this->denyAccessUnlessGranted($attribute, $exchange, 'Tu ne peux pas faire cette action sur cet échange.');
+
         if (!$this->isCsrfTokenValid('exchange_'.$action.'_'.$exchange->getId(), $request->request->getString('_token'))) {
             $this->addFlash('error', 'Session expirée, réessaie.');
 
             return $back;
         }
-
-        $this->denyAccessUnlessGranted($attribute, $exchange, 'Tu ne peux pas faire cette action sur cet échange.');
 
         try {
             $this->exchangeManager->{$method}($exchange, $this->getAppUser());

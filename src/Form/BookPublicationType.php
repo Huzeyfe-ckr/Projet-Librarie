@@ -10,10 +10,13 @@ use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 class BookPublicationType extends AbstractType
 {
@@ -63,5 +66,31 @@ class BookPublicationType extends AbstractType
                     ),
                 ],
             ]);
+    }
+
+    public function configureOptions(OptionsResolver $resolver): void
+    {
+        $resolver->setDefaults([
+            // Règles qui dépendent de plusieurs champs à la fois
+            'constraints' => [new Callback($this->validatePublication(...))],
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed>|null $data
+     */
+    public function validatePublication(?array $data, ExecutionContextInterface $context): void
+    {
+        if (null === $data) {
+            return;
+        }
+
+        if (\count($data['books'] ?? []) > 1 && '' === trim((string) ($data['title'] ?? ''))) {
+            $context->buildViolation('Donne un titre à ton pack de livres.')->atPath('[title]')->addViolation();
+        }
+
+        if (AnnouncementType::Sale === ($data['type'] ?? null) && null === ($data['price'] ?? null)) {
+            $context->buildViolation('Indique un prix pour une vente.')->atPath('[price]')->addViolation();
+        }
     }
 }

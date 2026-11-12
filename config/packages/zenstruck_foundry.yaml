@@ -1,0 +1,34 @@
+when@dev: &dev
+    # See full configuration: https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#full-default-bundle-configuration
+    zenstruck_foundry:
+        faker:
+            # Données en français et toujours identiques d'un chargement à l'autre
+            locale: fr_FR
+            seed: 2026
+        persistence:
+            # Flush only once per call of `PersistentObjectFactory::create()`
+            flush_once: true
+        orm:
+            reset:
+                # Reset the database with migrations if the app has any, otherwise with the schema
+                mode: auto
+
+    # If you use the `make:factory --test` command, you may need to uncomment the following.
+    # See https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#generate
+    #services:
+    #    App\Tests\Factory\:
+    #        resource: '%kernel.project_dir%/tests/Factory/'
+    #        autowire: true
+    #        autoconfigure: true
+
+when@test:
+    zenstruck_foundry:
+        faker:
+            locale: fr_FR
+            seed: 2026
+        persistence:
+            flush_once: true
+        orm:
+            reset:
+                # Les migrations sont écrites pour MySQL : en test (SQLite), on crée le schéma depuis les entités
+                mode: schema

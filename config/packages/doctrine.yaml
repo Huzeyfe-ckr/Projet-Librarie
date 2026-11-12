@@ -24,8 +24,9 @@ doctrine:
 when@test:
     doctrine:
         dbal:
-            # "TEST_TOKEN" is typically set by ParaTest
-            dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+            # Base SQLite jetable dédiée aux tests (voir .env.test).
+            # Variable distincte de DATABASE_URL, car Docker Compose impose DATABASE_URL (MySQL) dans le conteneur.
+            url: '%env(resolve:TEST_DATABASE_URL)%'
 
 when@prod:
     doctrine:

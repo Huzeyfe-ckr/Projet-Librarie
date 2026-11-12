@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vérifie tes emails{% endblock %}
+
+{% block body %}
+    <div class="container container--narrow">
+        <section class="panel reset-panel">
+            <p class="eyebrow">Mot de passe oublié</p>
+            <h1>Vérifie ta boîte mail 📬</h1>
+            <p>
+                Si un compte correspond à cette adresse, un email avec un lien vient de lui être envoyé.
+                Le lien est valable <strong>1 heure</strong>.
+            </p>
+            <p class="muted small">Rien reçu ? Regarde dans les spams, ou refais une demande dans quelques minutes.</p>
+            <a href="{{ path('app_login') }}" class="btn btn-outline">Retour à la connexion</a>
+        </section>
+    </div>
+{% endblock %}

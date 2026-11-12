@@ -4,7 +4,7 @@
 {% block title %}Mes échanges{% endblock %}
 
 {% block body %}
-    <div class="container" style="max-width:880px">
+    <div class="container container--narrow">
         <header class="page-head">
             <p class="eyebrow">Messagerie</p>
             <h1>Mes échanges <span class="count">{{ exchanges|length }}</span></h1>
@@ -12,7 +12,7 @@
         </header>
 
         {% if exchanges is empty %}
-            <div class="empty" style="margin-top:24px">
+            <div class="empty mt-6">
                 <div class="empty__icon">✉️</div>
                 <h3>Aucun échange pour le moment</h3>
                 <p>Trouve un livre qui te plaît et envoie une demande à son propriétaire.</p>
@@ -21,17 +21,18 @@
         {% else %}
             {% set received = exchanges|filter(e => e.announcement.user.id == app.user.id)|length %}
 
-            <div class="tabs" role="tablist" data-tabs style="margin-top:16px">
-                <button type="button" class="is-active" data-filter="all">Tous ({{ exchanges|length }})</button>
-                <button type="button" data-filter="received">Reçus ({{ received }})</button>
-                <button type="button" data-filter="sent">Envoyés ({{ exchanges|length - received }})</button>
+            <div data-controller="tabs">
+            <div class="tabs mt-4" role="tablist">
+                <button type="button" role="tab" class="is-active" aria-selected="true" data-tabs-target="tab" data-action="tabs#filter" data-tabs-kind-param="all">Tous ({{ exchanges|length }})</button>
+                <button type="button" role="tab" aria-selected="false" data-tabs-target="tab" data-action="tabs#filter" data-tabs-kind-param="received">Reçus ({{ received }})</button>
+                <button type="button" role="tab" aria-selected="false" data-tabs-target="tab" data-action="tabs#filter" data-tabs-kind-param="sent">Envoyés ({{ exchanges|length - received }})</button>
             </div>
 
             <div class="exchange-list">
                 {% for exchange in exchanges %}
                     {% set mine = exchange.announcement.user.id == app.user.id %}
                     {% set other = mine ? exchange.requester : exchange.announcement.user %}
-                    <article class="exchange-item reveal" data-kind="{{ mine ? 'received' : 'sent' }}" style="--d: {{ (loop.index0 % 6) * 50 }}ms">
+                    <article class="exchange-item reveal" data-tabs-target="item" data-kind="{{ mine ? 'received' : 'sent' }}">
                         {{ ui.cover('', null, exchange.announcement.id) }}
                         <div>
                             <h3><a href="{{ path('exchange_show', {id: exchange.id}) }}">{{ exchange.announcement.title }}</a></h3>
@@ -47,25 +48,7 @@
                     </article>
                 {% endfor %}
             </div>
+            </div>
         {% endif %}
     </div>
-{% endblock %}
-
-{% block javascripts %}
-<script>
-(function () {
-    const tabs = document.querySelector('[data-tabs]');
-    if (!tabs) return;
-    const items = document.querySelectorAll('[data-kind]');
-    tabs.addEventListener('click', function (event) {
-        const button = event.target.closest('[data-filter]');
-        if (!button) return;
-        tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === button); });
-        const filter = button.dataset.filter;
-        items.forEach(function (item) {
-            item.hidden = filter !== 'all' && item.dataset.kind !== filter;
-        });
-    });
-})();
-</script>
 {% endblock %}

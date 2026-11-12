@@ -1,0 +1,11 @@
+{# Bouton ♥ pour ajouter / retirer un livre de la wishlist.
+   Variables : book, active (déjà dans la wishlist ?), from (optionnel : 'wishlist' pour revenir sur la wishlist) #}
+<form method="post" action="{{ path('wishlist_toggle', {id: book.id}) }}" class="wish-toggle">
+    <input type="hidden" name="_token" value="{{ csrf_token('wishlist_' ~ book.id) }}">
+    {% if from is defined %}<input type="hidden" name="from" value="{{ from }}">{% endif %}
+    <button type="submit" class="wish-toggle__btn {{ active ? 'is-active' }}" aria-pressed="{{ active ? 'true' : 'false' }}"
+            title="{{ active ? 'Retirer de ma wishlist' : 'Ajouter à ma wishlist' }}">
+        <span aria-hidden="true">{{ active ? '♥' : '♡' }}</span>
+        <span class="sr-only">{{ active ? 'Retirer « ' ~ book.title ~ ' » de ma wishlist' : 'Ajouter « ' ~ book.title ~ ' » à ma wishlist' }}</span>
+    </button>
+</form>

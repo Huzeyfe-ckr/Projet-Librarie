@@ -2,7 +2,7 @@
 {% set isPack = books|length > 1 %}
 {% set first = books|first %}
 
-<article class="book-card reveal" style="--d: {{ delay ?? 0 }}ms">
+<article class="book-card reveal">
     <div class="book-card__visual">
         {{ ui.cover_for(announcement, books) }}
 
@@ -45,8 +45,8 @@
 
         <div class="book-card__foot">
             {{ ui.avatar(announcement.user) }}
-            <span>{{ announcement.user.username }}</span>
-            <span style="margin-left:auto">{{ announcement.createdAt|date('d/m/Y') }}</span>
+            <span>{{ ui.user_link(announcement.user) }}</span>
+            <span class="ml-auto">{{ announcement.createdAt|date('d/m/Y') }}</span>
         </div>
     </div>
 </article>

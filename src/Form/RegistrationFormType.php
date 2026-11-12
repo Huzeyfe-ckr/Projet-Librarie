@@ -20,12 +20,10 @@ class RegistrationFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            // Règles du pseudo : voir l'entité User (communes avec la page de profil)
             ->add('username', TextType::class, [
                 'label' => 'Nom d\'utilisateur',
-                'constraints' => [
-                    new NotBlank(message: 'Choisis un nom d\'utilisateur.'),
-                    new Length(min: 3, max: 255),
-                ],
+                'help' => 'Visible par les autres membres. Lettres, chiffres, « . », « - » ou « _ ».',
             ])
             ->add('email', EmailType::class)
             ->add('agreeTerms', CheckboxType::class, [

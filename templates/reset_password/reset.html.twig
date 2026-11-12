@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau mot de passe{% endblock %}
+
+{% block body %}
+    <div class="container container--narrow">
+        <section class="panel reset-panel">
+            <p class="eyebrow">Mot de passe oublié</p>
+            <h1>Choisis un nouveau mot de passe</h1>
+
+            {{ form_start(resetForm, {attr: {class: 'form'}}) }}
+                {{ form_row(resetForm.newPassword.first) }}
+                {{ form_row(resetForm.newPassword.second) }}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            {{ form_end(resetForm) }}
+        </section>
+    </div>
+{% endblock %}

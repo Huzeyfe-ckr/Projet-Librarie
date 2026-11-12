@@ -68,7 +68,6 @@
                         {% include 'announcement/_card.html.twig' with {
                             announcement: announcement,
                             books: booksByAnnouncement[announcement.id] ?? [],
-                            delay: loop.index0 * 70
                         } %}
                     {% endfor %}
                 </div>
@@ -85,15 +84,15 @@
                 </div>
             </div>
             <div class="steps">
-                <article class="step reveal" style="--d: 0ms">
+                <article class="step reveal">
                     <h3>Dépose tes livres</h3>
                     <p>Un seul livre ou tout un carton en pack. Choisis de le donner ou de le vendre, et indique son état.</p>
                 </article>
-                <article class="step reveal" style="--d: 90ms">
+                <article class="step reveal">
                     <h3>Discute avec les lecteurs</h3>
                     <p>Les intéressés t'écrivent directement depuis l'annonce. Une conversation par demande, tout est centralisé.</p>
                 </article>
-                <article class="step reveal" style="--d: 180ms">
+                <article class="step reveal">
                     <h3>Faites l'échange</h3>
                     <p>Vous convenez d'un rendez-vous, le livre change de mains et repart pour un nouveau chapitre.</p>
                 </article>

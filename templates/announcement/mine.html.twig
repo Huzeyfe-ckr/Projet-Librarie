@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
+
+{% block title %}Mes annonces{% endblock %}
+
+{% block body %}
+    <div class="container container--narrow">
+        <header class="page-head">
+            <p class="eyebrow">Mon espace</p>
+            <h1>Mes annonces <span class="count">{{ announcements|length }}</span></h1>
+            <p class="muted">Suis tes annonces, modifie-les tant qu’elles sont disponibles ou retire-les du site.</p>
+        </header>
+
+        {% if announcements is empty %}
+            <div class="empty">
+                <div class="empty__icon">📚</div>
+                <h3>Tu n’as encore rien publié</h3>
+                <p>Un livre qui prend la poussière ? Donne-lui une seconde vie.</p>
+                <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
+            </div>
+        {% else %}
+            <div class="exchange-list">
+                {% for announcement in announcements %}
+                    {% set books = booksByAnnouncement[announcement.id] ?? [] %}
+                    {% set pending = pendingRequests[announcement.id] ?? 0 %}
+                    {% set online = announcement.inactivatedAt is null %}
+
+                    <article class="exchange-item my-announcement {{ online ? '' : 'is-offline' }}">
+                        {{ ui.cover_for(announcement, books) }}
+                        <div>
+                            <h3><a href="{{ path('announcement_show', {id: announcement.id}) }}">{{ announcement.title }}</a></h3>
+                            <p>
+                                {{ books|length }} livre{{ books|length > 1 ? 's' }}
+                                · publiée le {{ announcement.createdAt|date('d/m/Y') }}
+                                {% if pending > 0 %}
+                                    · <a href="{{ path('exchange_index') }}"><strong>{{ pending }} demande{{ pending > 1 ? 's' }} en attente</strong></a>
+                                {% endif %}
+                            </p>
+                            <div class="my-announcement__actions">
+                                {% if is_granted('ANNOUNCEMENT_EDIT', announcement) %}
+                                    <a href="{{ path('announcement_edit', {id: announcement.id}) }}" class="btn btn-outline btn-sm">Modifier</a>
+                                {% endif %}
+                                {% if is_granted('ANNOUNCEMENT_DEACTIVATE', announcement) %}
+                                    <form method="post" action="{{ path('announcement_deactivate', {id: announcement.id}) }}"
+                                          {{ ui.confirm('Retirer cette annonce du site ? Les demandes en attente seront refusées.', 'Retirer l’annonce') }}>
+                                        <input type="hidden" name="_token" value="{{ csrf_token('announcement_deactivate_' ~ announcement.id) }}">
+                                        <button type="submit" class="btn btn-ghost btn-sm">Retirer</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="exchange-item__side">
+                            {% if online %}
+                                {{ ui.announcement_status(announcement.status) }}
+                            {% else %}
+                                <span class="badge badge--dot badge--slate">Retirée le {{ announcement.inactivatedAt|date('d/m/Y') }}</span>
+                            {% endif %}
+                            {{ ui.price(announcement) }}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

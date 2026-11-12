@@ -11,6 +11,8 @@
 
 ### .env files
 .env.*
+# .env.test ne contient aucun secret : il est versionné pour que les tests marchent partout
+!.env.test
 
 
 ### macOS / éditeurs
@@ -21,3 +23,16 @@
 /.php-cs-fixer.php
 /.php-cs-fixer.cache
 ###< friendsofphp/php-cs-fixer ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+### Photos envoyées par les utilisateurs
+/public/uploads/
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###

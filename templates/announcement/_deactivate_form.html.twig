@@ -1,0 +1,9 @@
+{# Bouton « Retirer l'annonce » (droits vérifiés par AnnouncementVoter). Attend la variable `announcement`. #}
+{% import '_partials/ui.html.twig' as ui %}
+{% if is_granted('ANNOUNCEMENT_DEACTIVATE', announcement) %}
+    <form method="post" action="{{ path('announcement_deactivate', {id: announcement.id}) }}"
+          {{ ui.confirm('Retirer cette annonce du site ? Les demandes en attente seront refusées.', 'Retirer l’annonce') }}>
+        <input type="hidden" name="_token" value="{{ csrf_token('announcement_deactivate_' ~ announcement.id) }}">
+        <button type="submit" class="btn btn-ghost btn-block">Retirer l’annonce</button>
+    </form>
+{% endif %}

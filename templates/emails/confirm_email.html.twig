@@ -1,0 +1,10 @@
+{% extends 'emails/_layout.html.twig' %}
+
+{% block content %}
+    <p>Bonjour {{ user.username }},</p>
+    <p>Bienvenue sur BookShare ! Confirme ton adresse email pour pouvoir publier des livres et faire des demandes :</p>
+    <p style="margin:28px 0;">
+        <a href="{{ confirmUrl }}" style="background:#3d5a4a;color:#f6f1e8;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold;">Confirmer mon adresse</a>
+    </p>
+    <p style="font-size:13px;color:#6b6458;">Ce lien expire dans {{ expiresIn.h > 0 ? expiresIn.h ~ ' heure' ~ (expiresIn.h > 1 ? 's') : expiresIn.i ~ ' minutes' }}.</p>
+{% endblock %}

@@ -1,7 +1,7 @@
-<div class="book-entry" data-book-entry>
+<div class="book-entry" data-book-form-target="entry">
     <div class="book-entry-header">
         <strong data-entry-label>Livre</strong>
-        <button type="button" class="link-danger" data-remove-entry>Retirer</button>
+        <button type="button" class="link-danger" data-action="book-form#remove">Retirer</button>
     </div>
 
     {{ form_row(f.title, {attr: {placeholder: 'Ex. : Le Petit Prince'}}) }}
@@ -13,4 +13,21 @@
         {{ form_row(f.isbn, {attr: {placeholder: '978…'}}) }}
         {{ form_row(f.bookCondition) }}
     </div>
+
+    {% if book is defined and book and book.activePages is not empty %}
+        <p class="small muted">Photos actuelles</p>
+        <ul class="photo-list">
+            {% for page in book.activePages %}
+                <li>
+                    <img src="{{ page.imgUrl }}" alt="Photo {{ loop.index }} de {{ book.title }}">
+                    {# Bouton du formulaire principal qui envoie vers une autre route (pas de formulaire imbriqué en HTML) #}
+                    <button type="submit" class="link-danger small" formnovalidate formmethod="post"
+                            formaction="{{ path('book_page_delete', {id: page.id}) }}"
+                            name="_token" value="{{ csrf_token('book_page_delete_' ~ page.id) }}">Supprimer</button>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {{ form_row(f.photos) }}
 </div>

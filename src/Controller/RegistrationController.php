@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\RegistrationFormType;
 use App\Security\LoginFormAuthenticator;
+use App\Service\AccountMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -21,6 +22,7 @@ class RegistrationController extends AbstractController
         UserPasswordHasherInterface $userPasswordHasher,
         Security $security,
         EntityManagerInterface $entityManager,
+        AccountMailer $mailer,
     ): Response {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_home');
@@ -40,7 +42,8 @@ class RegistrationController extends AbstractController
             $entityManager->persist($user);
             $entityManager->flush();
 
-            $this->addFlash('success', 'Bienvenue ! Ton compte a bien été créé.');
+            $mailer->sendEmailConfirmation($user);
+            $this->addFlash('success', \sprintf('Bienvenue ! Confirme ton adresse en cliquant sur le lien envoyé à %s.', $user->getEmail()));
 
             return $security->login($user, LoginFormAuthenticator::class, 'main')
                 ?? $this->redirectToRoute('app_home');

@@ -5,7 +5,7 @@
 
 {% block body %}
     <div class="auth">
-        <figure class="auth__art" style="background: var(--terracotta)">
+        <figure class="auth__art auth__art--terracotta">
             <div>
                 <blockquote>« Lire, c'est boire et manger. L'esprit qui ne lit pas maigrit comme le corps qui ne mange pas. »</blockquote>
                 <figcaption>Victor Hugo</figcaption>
@@ -42,7 +42,7 @@
                     </div>
                     {{ form_errors(registrationForm.agreeTerms) }}
 
-                    <button type="submit" class="btn btn-accent btn-block btn-lg" style="margin-top:24px">Créer mon compte</button>
+                    <button type="submit" class="btn btn-accent btn-block btn-lg mt-6">Créer mon compte</button>
                 {{ form_end(registrationForm) }}
 
                 <p class="auth__alt">Déjà inscrit ? <a href="{{ path('app_login') }}">Connecte-toi</a></p>

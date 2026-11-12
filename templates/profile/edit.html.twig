@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block body %}
+    <div class="container container--narrow">
+        <header class="page-head">
+            <p class="eyebrow">Mon espace</p>
+            <h1>Mon profil</h1>
+            <p class="muted">
+                <a href="{{ path('user_show', {username: app.user.username}) }}">Voir mon profil public</a>
+            </p>
+        </header>
+
+        <section class="panel profile-section">
+            <h2>Informations publiques</h2>
+            {{ form_start(profileForm, {attr: {class: 'form'}}) }}
+                <div class="profile-avatar">
+                    {{ ui.avatar(app.user, 'xl') }}
+                    <div>
+                        {{ form_row(profileForm.avatar) }}
+                        {% if app.user.avatarUrl %}{{ form_row(profileForm.removeAvatar) }}{% else %}{% do profileForm.removeAvatar.setRendered %}{% endif %}
+                    </div>
+                </div>
+                {{ form_row(profileForm.username) }}
+                <p class="small muted">Email : {{ app.user.email }}</p>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            {{ form_end(profileForm) }}
+        </section>
+
+        <section class="panel profile-section">
+            <h2>Mot de passe</h2>
+            {{ form_start(passwordForm, {attr: {class: 'form'}}) }}
+                {{ form_row(passwordForm.currentPassword) }}
+                {{ form_row(passwordForm.newPassword.first) }}
+                {{ form_row(passwordForm.newPassword.second) }}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Changer le mot de passe</button>
+                </div>
+            {{ form_end(passwordForm) }}
+        </section>
+
+        <section class="panel profile-section profile-section--danger" id="delete">
+            <h2>Supprimer mon compte</h2>
+            <p>
+                Tes annonces seront retirées, tes échanges en cours annulés et tes informations personnelles
+                (email, pseudo, photo) effacées. <strong>Cette action est définitive.</strong>
+            </p>
+            {# Confirmation par la boîte <dialog> (contrôleur Stimulus « confirm ») #}
+            {{ form_start(deleteForm, {attr: {
+                class: 'form',
+                'data-controller': 'confirm',
+                'data-action': 'confirm#ask',
+                'data-confirm-message-value': 'Supprimer définitivement ton compte ? Cette action ne peut pas être annulée.',
+                'data-confirm-button-value': 'Supprimer mon compte',
+            }}) }}
+                {{ form_row(deleteForm.currentPassword) }}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">Supprimer mon compte</button>
+                </div>
+            {{ form_end(deleteForm) }}
+        </section>
+    </div>
+{% endblock %}

@@ -29,6 +29,7 @@ class CommentRepository extends ServiceEntityRepository
             ->andWhere('c.announcement = :announcement')
             ->andWhere('c.inactivatedAt IS NULL')
             ->andWhere('u.inactivatedAt IS NULL')
+            ->andWhere('u.deletedAt IS NULL')
             ->setParameter('announcement', $announcement)
             ->orderBy('c.createdAt', 'ASC')
             ->getQuery()

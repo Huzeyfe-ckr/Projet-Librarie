@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
+
+{% block title %}Ma wishlist{% endblock %}
+
+{% block body %}
+    <div class="container container--narrow">
+        <header class="page-head">
+            <p class="eyebrow">Mon espace</p>
+            <h1>Ma wishlist <span class="count">{{ items|length }}</span></h1>
+            <p class="muted">Les livres que tu as mis de côté. Fais une demande au vendeur tant qu’ils sont disponibles.</p>
+        </header>
+
+        {% if items is empty %}
+            <div class="empty">
+                <div class="empty__icon">♡</div>
+                <h3>Ta wishlist est vide</h3>
+                <p>Clique sur le cœur à côté d’un livre pour le retrouver ici.</p>
+                <a href="{{ path('announcement_index') }}" class="btn btn-primary">Parcourir les annonces</a>
+            </div>
+        {% else %}
+            <div class="exchange-list">
+                {% for item in items %}
+                    {% set book = item.book %}
+                    {% set announcement = book.announcement %}
+                    <article class="exchange-item wish-item">
+                        {% if book.coverUrl %}
+                            {{ ui.photo(book.coverUrl, book.title, book.id) }}
+                        {% else %}
+                            {{ ui.cover('', null, book.id) }}
+                        {% endif %}
+                        <div>
+                            <h3><a href="{{ path('announcement_show', {id: announcement.id, _fragment: 'book-' ~ book.id}) }}">{{ book.title }}</a></h3>
+                            <p>
+                                {% if book.author %}{{ book.author }} · {% endif %}{{ book.bookCondition.label }}
+                                · dans « {{ announcement.title }} » de <strong>{{ announcement.user.username }}</strong>
+                            </p>
+                        </div>
+                        <div class="exchange-item__side">
+                            {{ ui.announcement_status(announcement.status) }}
+                            {{ include('wishlist/_toggle.html.twig', {book: book, active: true, from: 'wishlist'}) }}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

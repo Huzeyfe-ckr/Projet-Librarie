@@ -37,4 +37,25 @@ class BookRepository extends ServiceEntityRepository
 
         return $grouped;
     }
+
+    /**
+     * Genres des livres en ligne, pour la liste déroulante des filtres.
+     *
+     * @return string[]
+     */
+    public function findGenres(): array
+    {
+        $rows = $this->createQueryBuilder('b')
+            ->select('DISTINCT b.genre')
+            ->innerJoin('b.announcement', 'a')
+            ->andWhere('b.inactivatedAt IS NULL')
+            ->andWhere('a.inactivatedAt IS NULL')
+            ->andWhere('b.genre IS NOT NULL')
+            ->andWhere("b.genre <> ''")
+            ->orderBy('b.genre', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return array_values(array_unique(array_map('trim', $rows)));
+    }
 }

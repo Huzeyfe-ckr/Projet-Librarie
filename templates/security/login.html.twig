@@ -20,7 +20,7 @@
                 <p class="muted">Retrouve tes annonces et tes conversations.</p>
 
                 {% if error %}
-                    <div class="flash flash--error" style="margin:20px 0 0">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                    <div class="flash flash--error mt-5">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
                 {% endif %}
 
                 <form method="post" class="form">
@@ -29,10 +29,11 @@
 
                     <label for="password">Mot de passe</label>
                     <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+                    <p class="small mt-3 m-0"><a href="{{ path('app_forgot_password_request') }}">Mot de passe oublié ?</a></p>
 
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-                    <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:24px">Se connecter</button>
+                    <button type="submit" class="btn btn-primary btn-block btn-lg mt-6">Se connecter</button>
                 </form>
 
                 <p class="auth__alt">Pas encore de compte ? <a href="{{ path('app_register') }}">Inscris-toi</a></p>

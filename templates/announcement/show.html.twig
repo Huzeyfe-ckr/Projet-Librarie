@@ -21,19 +21,47 @@
         <div class="detail-grid">
             {# ===== Colonne gauche : visuel + action ===== #}
             <aside class="detail-aside">
+                {# Toutes les photos de l'annonce, tous livres confondus #}
+                {% set photos = [] %}
+                {% for book in books %}
+                    {% for page in book.activePages %}
+                        {% set photos = photos|merge([{url: page.imgUrl, alt: book.title}]) %}
+                    {% endfor %}
+                {% endfor %}
+
                 <div class="detail-aside__visual">
-                    {{ ui.cover_for(announcement, books) }}
+                    {% if photos is empty %}
+                        {{ ui.cover_for(announcement, books) }}
+                    {% else %}
+                        <div class="gallery" data-controller="gallery">
+                            <div class="cover-photo">
+                                {{ ui.cover(announcement.title, null, announcement.id) }}
+                                <img class="cover-photo__img gallery__main" src="{{ photos[0].url }}" alt="{{ photos[0].alt }}" data-gallery-target="main" data-controller="photo" data-action="error->photo#fail">
+                            </div>
+                            {% if photos|length > 1 %}
+                                <ul class="gallery__thumbs">
+                                    {% for photo in photos %}
+                                        <li>
+                                            <button type="button" data-gallery-target="thumb" data-action="gallery#show" data-gallery-url-param="{{ photo.url }}" data-gallery-alt-param="{{ photo.alt }}" aria-pressed="{{ loop.first ? 'true' : 'false' }}" aria-label="Voir la photo {{ loop.index }}">
+                                                <img src="{{ photo.url }}" alt="" loading="lazy" data-controller="photo" data-photo-hide-value="li" data-action="error->photo#fail">
+                                            </button>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="panel">
-                    <p class="small muted" style="margin:0">{{ lot ? 'Prix du lot' : 'Prix' }}</p>
+                    <p class="small muted m-0">{{ lot ? 'Prix du lot' : 'Prix' }}</p>
                     {{ ui.price(announcement) }}
-                    {% if lot and announcement.price is not null %}<p class="small muted" style="margin:0">pour les {{ lot.count }} livres</p>{% endif %}
+                    {% if lot and announcement.price is not null %}<p class="small muted m-0">pour les {{ lot.count }} livres</p>{% endif %}
 
                     <div class="seller">
                         {{ ui.avatar(seller, 'lg') }}
                         <div>
-                            <strong>{{ seller.username }}</strong>
+                            <strong>{{ ui.user_link(seller) }}</strong>
                             <span>Membre depuis {{ seller.createdAt|date('m/Y') }}</span>
                         </div>
                     </div>
@@ -43,18 +71,24 @@
                         <a href="{{ path('app_login') }}" class="btn btn-primary btn-block">Se connecter</a>
                     {% elseif isOwner %}
                         <p class="small muted">C'est ton annonce. Les demandes reçues arrivent dans tes échanges.</p>
-                        <a href="{{ path('exchange_index') }}" class="btn btn-outline btn-block">Voir mes échanges</a>
+                        <div class="owner-actions">
+                            <a href="{{ path('exchange_index') }}" class="btn btn-outline btn-block">Voir mes échanges</a>
+                            {% if is_granted('ANNOUNCEMENT_EDIT', announcement) %}
+                                <a href="{{ path('announcement_edit', {id: announcement.id}) }}" class="btn btn-primary btn-block">Modifier l’annonce</a>
+                            {% endif %}
+                            {% include 'announcement/_deactivate_form.html.twig' %}
+                        </div>
                     {% elseif myExchange %}
-                        <p class="small muted" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <p class="small muted cluster">
                             Ta demande : {{ ui.exchange_status(myExchange.status) }}
                         </p>
                         <a href="{{ path('exchange_show', {id: myExchange.id}) }}" class="btn btn-primary btn-block">Ouvrir la conversation</a>
                     {% elseif announcement.status.value == 'available' %}
                         <form method="post" action="{{ path('exchange_request', {id: announcement.id}) }}" class="form">
                             <input type="hidden" name="_token" value="{{ csrf_token('exchange_request_' ~ announcement.id) }}">
-                            <label for="request-message" style="margin-top:0">Un petit mot pour {{ seller.username }}</label>
+                            <label for="request-message" class="mt-0">Un petit mot pour {{ seller.username }}</label>
                             <textarea id="request-message" name="message" rows="3" maxlength="2000" placeholder="Bonjour, est-il toujours disponible ? (facultatif)"></textarea>
-                            <button type="submit" class="btn btn-accent btn-block" style="margin-top:12px">
+                            <button type="submit" class="btn btn-accent btn-block mt-3">
                                 {{ lot ? 'Demander ce lot' : 'Demander ce livre' }}
                             </button>
                         </form>
@@ -95,7 +129,7 @@
                     </dl>
                 {% endif %}
 
-                <h2 style="margin-top:32px">Description</h2>
+                <h2 class="mt-8">Description</h2>
                 {% if announcement.description %}
                     <div class="prose"><p>{{ announcement.description|nl2br }}</p></div>
                 {% else %}
@@ -110,8 +144,12 @@
                 {% else %}
                     <ul class="book-list">
                         {% for book in books %}
-                            <li class="book-row">
-                                {{ ui.cover('', null, book.id) }}
+                            <li class="book-row" id="book-{{ book.id }}">
+                                {% if book.coverUrl %}
+                                    {{ ui.photo(book.coverUrl, book.title, book.id) }}
+                                {% else %}
+                                    {{ ui.cover('', null, book.id) }}
+                                {% endif %}
                                 <div>
                                     <p class="book-row__title">{{ book.title }}</p>
                                     <p class="book-row__meta">
@@ -120,7 +158,12 @@
                                         {% if book.isbn %}<span>ISBN {{ book.isbn }}</span>{% endif %}
                                     </p>
                                 </div>
-                                {{ ui.condition(book.bookCondition) }}
+                                <div class="book-row__side">
+                                    {{ ui.condition(book.bookCondition) }}
+                                    {% if app.user and not isOwner %}
+                                        {{ include('wishlist/_toggle.html.twig', {book: book, active: wishlisted[book.id] is defined}) }}
+                                    {% endif %}
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>
@@ -130,7 +173,7 @@
 
                 {# ===== Avis ===== #}
                 <section id="comments">
-                    <h2>Questions & avis <span class="muted" style="font-family:var(--font-body);font-size:1rem;font-weight:500">({{ comments|length }})</span></h2>
+                    <h2>Questions & avis <span class="heading-count">({{ comments|length }})</span></h2>
 
                     {% if comments is empty %}
                         <p class="muted">Pas encore de message. Une question sur l'état d'un livre ? Lance la discussion.</p>
@@ -141,7 +184,7 @@
                                     {{ ui.avatar(comment.user) }}
                                     <div>
                                         <div class="comment__head">
-                                            <strong>{{ comment.user.username }}</strong>
+                                            <strong>{{ ui.user_link(comment.user) }}</strong>
                                             {% if comment.user.id == seller.id %}<span class="badge badge--green">Vendeur</span>{% endif %}
                                             <span>{{ comment.createdAt|date('d/m/Y à H:i') }}</span>
                                         </div>
@@ -153,16 +196,16 @@
                     {% endif %}
 
                     {% if app.user %}
-                        <form method="post" action="{{ path('comment_add', {id: announcement.id}) }}" class="form panel panel--soft" style="margin-top:20px">
+                        <form method="post" action="{{ path('comment_add', {id: announcement.id}) }}" class="form panel panel--soft mt-5">
                             <input type="hidden" name="_token" value="{{ csrf_token('comment_' ~ announcement.id) }}">
-                            <label for="comment-content" style="margin-top:0">Ta question ou ton avis</label>
+                            <label for="comment-content" class="mt-0">Ta question ou ton avis</label>
                             <textarea id="comment-content" name="content" rows="3" minlength="3" maxlength="1000" required placeholder="Par exemple : la couverture est-elle abîmée ?"></textarea>
-                            <div class="form-actions" style="margin-top:12px">
+                            <div class="form-actions mt-3">
                                 <button type="submit" class="btn btn-primary">Publier</button>
                             </div>
                         </form>
                     {% else %}
-                        <p class="muted" style="margin-top:16px"><a href="{{ path('app_login') }}">Connecte-toi</a> pour poser une question.</p>
+                        <p class="muted mt-4"><a href="{{ path('app_login') }}">Connecte-toi</a> pour poser une question.</p>
                     {% endif %}
                 </section>
             </div>

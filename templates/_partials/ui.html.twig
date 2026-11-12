@@ -16,25 +16,55 @@
     </div>
 {% endmacro %}
 
-{# Une couverture, ou une pile si l'annonce contient plusieurs livres #}
+{# Photo d'un livre, au même format qu'une couverture.
+   La couverture générée est dessinée dessous : si l'image ne charge pas (fichier supprimé,
+   site d'hébergement en panne…), le contrôleur Stimulus « photo » masque l'image et la couverture reste visible. #}
+{% macro photo(url, alt = '', seed = 0, title = null, author = null) %}
+    <div class="cover-photo">
+        {{ _self.cover(title ?? '', author, seed) }}
+        <img class="cover-photo__img" src="{{ url }}" alt="{{ alt }}" loading="lazy" data-controller="photo" data-action="error->photo#fail">
+    </div>
+{% endmacro %}
+
+{# Couverture d'une annonce : la vraie photo si elle existe, sinon une couverture générée.
+   Plusieurs livres : une pile. #}
 {% macro cover_for(announcement, books) %}
     {% set first = books|first %}
+    {% set withPhoto = books|filter(b => b.coverUrl)|first %}
+    {% set photo = withPhoto ? withPhoto.coverUrl : null %}
     {% if books|length > 1 %}
         <div class="cover-stack">
-            {{ _self.cover(announcement.title, books|length ~ ' livres', announcement.id) }}
+            {% if photo %}
+                {{ _self.photo(photo, announcement.title, announcement.id, announcement.title, books|length ~ ' livres') }}
+            {% else %}
+                {{ _self.cover(announcement.title, books|length ~ ' livres', announcement.id) }}
+            {% endif %}
             {{ _self.cover('', null, announcement.id + 1) }}
             {{ _self.cover('', null, announcement.id + 2) }}
         </div>
+    {% elseif photo %}
+        {{ _self.photo(photo, first.title, announcement.id, first.title, first.author) }}
     {% else %}
         {{ _self.cover(first ? first.title : announcement.title, first ? first.author : null, announcement.id) }}
     {% endif %}
 {% endmacro %}
 
 {# Avatar avec initiales #}
+{# Avatar : la photo de profil si elle existe (initiales dessous, visibles si l'image ne charge pas), sinon les initiales #}
 {% macro avatar(user, size = null) %}
     {% set name = user ? user.username : '?' %}
-    <span class="avatar avatar--{{ _self.tone(user ? user.id : 0) }} {{ size ? 'avatar--' ~ size }}" aria-hidden="true">{{ name|slice(0, 2) }}</span>
+    <span class="avatar avatar--{{ _self.tone(user ? user.id : 0) }} {{ size ? 'avatar--' ~ size }}" aria-hidden="true">
+        {{- name|slice(0, 2) -}}
+        {%- if user and user.avatarUrl -%}
+            <img class="avatar__img" src="{{ user.avatarUrl }}" alt="" loading="lazy" data-controller="photo" data-action="error->photo#fail">
+        {%- endif -%}
+    </span>
 {% endmacro %}
+
+{# Pseudo cliquable vers le profil public #}
+{% macro user_link(user) -%}
+    <a href="{{ path('user_show', {username: user.username}) }}" class="user-link">{{ user.username }}</a>
+{%- endmacro %}
 
 {# ---------- Badges des enums ----------
    Les libellés et couleurs sont définis dans les enums (src/Enum) :
@@ -98,3 +128,9 @@
         {% endif %}
     </div>
 {% endmacro %}
+
+{# Attributs à poser sur un <form> pour demander une confirmation avant l'envoi (contrôleur Stimulus « confirm »).
+   Usage : <form method="post" … {{ ui.confirm('Retirer cette annonce ?', 'Retirer') }}> #}
+{% macro confirm(message, button = 'Confirmer') -%}
+    data-controller="confirm" data-action="confirm#ask" data-confirm-message-value="{{ message|e('html_attr') }}" data-confirm-button-value="{{ button|e('html_attr') }}"
+{%- endmacro %}

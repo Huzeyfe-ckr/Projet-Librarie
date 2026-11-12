@@ -1,21 +1,32 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Publier un livre ou un pack{% endblock %}
+{# Template partagé : création (book_new) et modification (announcement_edit, la variable announcement est alors définie) #}
+{% set editing = announcement is defined %}
+
+{% block title %}{{ editing ? 'Modifier l’annonce' : 'Publier un livre ou un pack' }}{% endblock %}
 
 {% block body %}
+    {# HTML d'un livre vide, utilisé par le contrôleur Stimulus « book-form » pour ajouter un livre.
+       Passé à form_start avec « ~ '' » : on obtient une chaîne simple, que le thème de formulaire échappe une seule fois. #}
     {% set prototype_html %}
         {% include 'book/_book_entry.html.twig' with {f: form.books.vars.prototype} only %}
     {% endset %}
 
     <div class="container">
         <div class="form-card">
-            <header class="page-head" style="padding-top:8px">
-                <p class="eyebrow">Nouvelle annonce</p>
-                <h1>Publier un livre ou un pack</h1>
-                <p class="muted">Un seul livre, ou plusieurs regroupés sous une même annonce : idéal pour vider une étagère d'un coup.</p>
+            <header class="page-head page-head--tight">
+                {% if editing %}
+                    <p class="eyebrow">Modifier l’annonce</p>
+                    <h1>{{ announcement.title }}</h1>
+                    <p class="muted">Un livre retiré de la liste n’apparaîtra plus sur l’annonce.</p>
+                {% else %}
+                    <p class="eyebrow">Nouvelle annonce</p>
+                    <h1>Publier un livre ou un pack</h1>
+                    <p class="muted">Un seul livre, ou plusieurs regroupés sous une même annonce : idéal pour vider une étagère d'un coup.</p>
+                {% endif %}
             </header>
 
-            {{ form_start(form, {attr: {class: 'form'}}) }}
+            {{ form_start(form, {attr: {class: 'form', 'data-controller': 'book-form', 'data-book-form-prototype-value': prototype_html ~ '', 'data-book-form-max-value': maxBooks}}) }}
                 {{ form_errors(form) }}
 
                 <section class="form-section">
@@ -24,10 +35,10 @@
 
                     {{ form_row(form.title, {attr: {placeholder: 'Ex. : Lot de romans policiers'}}) }}
                     <div class="form-row-2">
-                        {{ form_row(form.type) }}
+                        {{ form_row(form.type, {attr: {'data-book-form-target': 'type', 'data-action': 'book-form#syncPrice'}}) }}
                         <div>
                             {{ form_label(form.price) }}
-                            <div class="money">{{ form_widget(form.price, {attr: {placeholder: '0,00'}}) }}</div>
+                            <div class="money">{{ form_widget(form.price, {attr: {placeholder: '0,00', 'data-book-form-target': 'price'}}) }}</div>
                             {{ form_help(form.price) }}
                             {{ form_errors(form.price) }}
                         </div>
@@ -40,79 +51,22 @@
                     <p>Ajoute autant de livres que tu veux (jusqu'à {{ maxBooks }}).</p>
                     {{ form_errors(form.books) }}
 
-                    <div id="book-list"
-                         data-prototype="{{ prototype_html|e('html_attr') }}"
-                         data-max="{{ maxBooks }}">
+                    <div data-book-form-target="list">
                         {% for entry in form.books %}
-                            {% include 'book/_book_entry.html.twig' with {f: entry} only %}
+                            {# En modification, on passe le livre existant pour afficher ses photos #}
+                            {% include 'book/_book_entry.html.twig' with {f: entry, book: (existingBooks ?? [])[loop.index0] ?? null} only %}
                         {% endfor %}
                     </div>
                     {% do form.books.setRendered %}
 
-                    <button type="button" id="add-book" class="add-book">+ Ajouter un livre au pack</button>
+                    <button type="button" class="add-book" data-book-form-target="addButton" data-action="book-form#add">+ Ajouter un livre au pack</button>
                 </section>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary btn-lg">Publier l'annonce</button>
-                    <a href="{{ path('announcement_index') }}" class="btn btn-ghost">Annuler</a>
+                    <button type="submit" class="btn btn-primary btn-lg">{{ editing ? 'Enregistrer les modifications' : 'Publier l’annonce' }}</button>
+                    <a href="{{ editing ? path('announcement_show', {id: announcement.id}) : path('announcement_index') }}" class="btn btn-ghost">Annuler</a>
                 </div>
             {{ form_end(form) }}
         </div>
     </div>
-{% endblock %}
-
-{% block javascripts %}
-<script>
-(function () {
-    const list = document.getElementById('book-list');
-    const addBtn = document.getElementById('add-book');
-    const max = parseInt(list.dataset.max, 10);
-    // Les index déjà rendus par le serveur sont < 1000 : pas de collision possible
-    let nextIndex = 1000;
-
-    function refresh() {
-        const entries = list.querySelectorAll('[data-book-entry]');
-        entries.forEach(function (entry, i) {
-            entry.querySelector('[data-entry-label]').textContent = 'Livre ' + (i + 1);
-            entry.querySelector('[data-remove-entry]').hidden = entries.length === 1;
-        });
-        addBtn.disabled = entries.length >= max;
-        addBtn.textContent = entries.length >= 1 ? '+ Ajouter un livre au pack' : '+ Ajouter un livre';
-    }
-
-    addBtn.addEventListener('click', function () {
-        const html = list.dataset.prototype.replace(/__name__/g, nextIndex++);
-        const holder = document.createElement('div');
-        holder.innerHTML = html.trim();
-        const entry = holder.firstElementChild;
-        list.appendChild(entry);
-        refresh();
-        const firstInput = entry.querySelector('input');
-        if (firstInput) firstInput.focus();
-    });
-
-    list.addEventListener('click', function (event) {
-        const button = event.target.closest('[data-remove-entry]');
-        if (!button) return;
-        button.closest('[data-book-entry]').remove();
-        refresh();
-    });
-
-    // Le prix n'a pas de sens pour un don : on désactive le champ
-    const type = document.getElementById('{{ form.type.vars.id }}');
-    const price = document.getElementById('{{ form.price.vars.id }}');
-    function syncPrice() {
-        const isDonation = type.value === 'donation';
-        price.disabled = isDonation;
-        if (isDonation) price.value = '';
-        price.closest('.money').style.opacity = isDonation ? '.5' : '1';
-    }
-    if (type && price) {
-        type.addEventListener('change', syncPrice);
-        syncPrice();
-    }
-
-    refresh();
-})();
-</script>
 {% endblock %}

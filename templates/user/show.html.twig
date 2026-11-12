@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
+
+{% block title %}{{ member.username }}{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <header class="profile-head">
+            {{ ui.avatar(member, 'xl') }}
+            <div>
+                <p class="eyebrow">Membre</p>
+                <h1>{{ member.username }}</h1>
+                <p class="muted cluster">
+                    <span>Membre depuis {{ member.createdAt|date('m/Y') }}</span>
+                    <span>· {{ announcements|length }} annonce{{ announcements|length > 1 ? 's' }} en ligne</span>
+                    <span>· {{ completedCount }} échange{{ completedCount > 1 ? 's' }} terminé{{ completedCount > 1 ? 's' }}</span>
+                </p>
+                {% if app.user and app.user.id == member.id %}
+                    <a href="{{ path('profile_edit') }}" class="btn btn-outline btn-sm">Modifier mon profil</a>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if announcements is empty %}
+            <div class="empty">
+                <div class="empty__icon">📚</div>
+                <h3>Aucune annonce en ligne</h3>
+                <p>{{ member.username }} n’a rien à proposer pour le moment.</p>
+            </div>
+        {% else %}
+            <div class="grid">
+                {% for announcement in announcements %}
+                    {% include 'announcement/_card.html.twig' with {
+                        announcement: announcement,
+                        books: booksByAnnouncement[announcement.id] ?? [],
+                    } %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

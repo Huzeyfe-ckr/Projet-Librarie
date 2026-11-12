@@ -8,17 +8,17 @@
         <nav class="breadcrumb"><a href="{{ path('exchange_index') }}">← Mes échanges</a></nav>
 
         <div class="chat-layout">
-            <section class="chat-card">
+            <section class="chat-card" data-controller="chat">
                 <header class="chat-card__head">
                     {{ ui.avatar(other, 'lg') }}
                     <div>
-                        <strong>{{ other.username }}</strong>
+                        <strong>{{ ui.user_link(other) }}</strong>
                         <span>À propos de « {{ announcement.title }} »</span>
                     </div>
-                    <div style="margin-left:auto">{{ ui.exchange_status(exchange.status) }}</div>
+                    <div class="ml-auto">{{ ui.exchange_status(exchange.status) }}</div>
                 </header>
 
-                <div class="chat" data-chat>
+                <div class="chat" data-chat-target="messages">
                     {% set lastDay = null %}
                     {% for message in messages %}
                         {% set day = message.sentAt|date('d/m/Y') %}
@@ -34,7 +34,7 @@
                             <span class="bubble__time">{{ message.sentAt|date('H:i') }}</span>
                         </div>
                     {% else %}
-                        <p class="muted" style="text-align:center;margin:auto">Aucun message pour l'instant.</p>
+                        <p class="muted chat__empty">Aucun message pour l'instant.</p>
                     {% endfor %}
                     <div id="bottom"></div>
                 </div>
@@ -43,7 +43,7 @@
                     {{ form_start(form, {attr: {class: 'chat-form form'}}) }}
                         <div class="chat-form__field">
                             {{ form_errors(form.content) }}
-                            {{ form_widget(form.content, {attr: {rows: 1, 'data-autogrow': ''}}) }}
+                            {{ form_widget(form.content, {attr: {rows: 1, 'data-chat-target': 'field', 'data-action': 'input->chat#grow keydown->chat#submitOnEnter'}}) }}
                         </div>
                         <button type="submit" class="btn btn-primary" aria-label="Envoyer">
                             Envoyer
@@ -56,15 +56,15 @@
             </section>
 
             <aside class="panel">
-                <p class="eyebrow" style="margin-bottom:10px">L'annonce</p>
-                <div style="max-width:120px;margin-bottom:16px">{{ ui.cover(announcement.title, null, announcement.id) }}</div>
+                <p class="eyebrow mb-3">L'annonce</p>
+                <div class="cover-thumb mb-4">{{ ui.cover_for(announcement, books) }}</div>
                 <h3>{{ announcement.title }}</h3>
-                <div class="badges" style="margin-bottom:14px">
+                <div class="badges mb-4">
                     {{ ui.type_badge(announcement.type) }}
                     {{ ui.announcement_status(announcement.status) }}
                 </div>
                 {{ ui.price(announcement) }}
-                <p class="small muted" style="margin-top:12px">Demande ouverte le {{ exchange.initiatedAt|date('d/m/Y') }}</p>
+                <p class="small muted mt-3">Demande ouverte le {{ exchange.initiatedAt|date('d/m/Y') }}</p>
 
                 {# ===== Actions sur l'échange (droits vérifiés par ExchangeVoter) ===== #}
                 {% set actions = [
@@ -78,7 +78,7 @@
                 {% if allowed is not empty %}
                     <div class="exchange-actions">
                         {% for action in allowed %}
-                            <form method="post" action="{{ path('exchange_transition', {id: exchange.id, action: action.name}) }}" {% if action.confirm is defined %}data-confirm="{{ action.confirm }}"{% endif %}>
+                            <form method="post" action="{{ path('exchange_transition', {id: exchange.id, action: action.name}) }}" {% if action.confirm is defined %}{{ ui.confirm(action.confirm, action.label) }}{% endif %}>
                                 <input type="hidden" name="_token" value="{{ csrf_token('exchange_' ~ action.name ~ '_' ~ exchange.id) }}">
                                 <button type="submit" class="btn {{ action.class }} btn-block">{{ action.label }}</button>
                             </form>
@@ -93,37 +93,4 @@
             </aside>
         </div>
     </div>
-{% endblock %}
-
-{% block javascripts %}
-<script>
-(function () {
-    // Demande de confirmation avant les actions importantes (refuser, annuler, terminer)
-    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-        });
-    });
-
-    // Toujours afficher le dernier message
-    const chat = document.querySelector('[data-chat]');
-    if (chat) chat.scrollTop = chat.scrollHeight;
-
-    // Zone de saisie qui s'agrandit + Entrée pour envoyer (Maj+Entrée = retour à la ligne)
-    const field = document.querySelector('[data-autogrow]');
-    if (!field) return;
-    function grow() {
-        field.style.height = 'auto';
-        field.style.height = Math.min(field.scrollHeight, 180) + 'px';
-    }
-    field.addEventListener('input', grow);
-    field.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' && !event.shiftKey && field.value.trim() !== '') {
-            event.preventDefault();
-            field.form.requestSubmit();
-        }
-    });
-    field.focus();
-})();
-</script>
 {% endblock %}

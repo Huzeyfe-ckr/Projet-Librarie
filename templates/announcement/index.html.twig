@@ -1,5 +1,7 @@
 {% extends 'base.html.twig' %}
 
+{% import '_partials/ui.html.twig' as ui %}
+
 {% block title %}Annonces{% endblock %}
 
 {% block body %}
@@ -7,30 +9,85 @@
         <header class="page-head">
             <p class="eyebrow">Le catalogue</p>
             <h1>
-                {% if term %}Résultats pour « {{ term }} »{% else %}Toutes les annonces{% endif %}
+                {% if term %}Résultats pour « {{ term }} »{% elseif search.hasFilters %}Annonces filtrées{% else %}Toutes les annonces{% endif %}
                 <span class="count">{{ total }} annonce{{ total > 1 ? 's' }}</span>
             </h1>
         </header>
 
-        <div class="toolbar">
-            <form method="get" class="searchbar" role="search">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                <label for="search" class="sr-only">Rechercher</label>
-                <input id="search" type="search" name="q" value="{{ term }}" placeholder="Rechercher un titre, un mot de la description…">
-                {% if term %}<a href="{{ path('announcement_index') }}" class="btn btn-ghost">Effacer</a>{% endif %}
-                <button type="submit" class="btn btn-primary">Rechercher</button>
-            </form>
-            {% if app.user %}
-                <a href="{{ path('book_new') }}" class="btn btn-accent">+ Publier un livre</a>
-            {% endif %}
-        </div>
+        {# Un seul formulaire GET : recherche texte + filtres + tri, tout reste dans l'URL (on peut partager une recherche) #}
+        <form method="get" action="{{ path('announcement_index') }}" class="search-form" role="search">
+            <div class="toolbar">
+                <div class="searchbar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <label for="search" class="sr-only">Rechercher</label>
+                    <input id="search" type="search" name="q" value="{{ term }}" placeholder="Un titre, un auteur, un ISBN, un mot de la description…">
+                    <button type="submit" class="btn btn-primary">Rechercher</button>
+                </div>
+                {% if app.user %}
+                    <a href="{{ path('book_new') }}" class="btn btn-accent">+ Publier un livre</a>
+                {% endif %}
+            </div>
+
+            <fieldset class="filters">
+                <legend class="sr-only">Filtres</legend>
+                <div class="filters__field">
+                    <label for="f-type">Type</label>
+                    <select id="f-type" name="type">
+                        <option value="">Tous</option>
+                        {% for type in enum_cases('App\\Enum\\AnnouncementType') %}
+                            <option value="{{ type.value }}" {{ search.type == type ? 'selected' }}>{{ type.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters__field">
+                    <label for="f-genre">Genre</label>
+                    <select id="f-genre" name="genre">
+                        <option value="">Tous</option>
+                        {% for genre in genres %}
+                            <option value="{{ genre }}" {{ search.genre == genre ? 'selected' }}>{{ genre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters__field">
+                    <label for="f-condition">État</label>
+                    <select id="f-condition" name="condition">
+                        <option value="">Tous</option>
+                        {% for condition in enum_cases('App\\Enum\\BookCondition') %}
+                            <option value="{{ condition.value }}" {{ search.condition == condition ? 'selected' }}>{{ condition.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters__field">
+                    <label for="f-price">Prix max (€)</label>
+                    <input id="f-price" type="number" name="max_price" min="0" step="0.5" inputmode="decimal" value="{{ search.maxPrice }}" placeholder="—">
+                </div>
+                <div class="filters__field">
+                    <label for="f-sort">Trier par</label>
+                    <select id="f-sort" name="sort">
+                        {% for value, label in constant('App\\Model\\AnnouncementSearch::SORTS') %}
+                            <option value="{{ value }}" {{ search.sort == value ? 'selected' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <label class="filters__check">
+                    <input type="checkbox" name="available" value="1" {{ search.availableOnly ? 'checked' }}>
+                    Disponibles uniquement
+                </label>
+                <div class="filters__actions">
+                    <button type="submit" class="btn btn-outline btn-sm">Appliquer</button>
+                    {% if term or search.hasFilters or search.sort != 'recent' %}
+                        <a href="{{ path('announcement_index') }}" class="btn btn-ghost btn-sm">Réinitialiser</a>
+                    {% endif %}
+                </div>
+            </fieldset>
+        </form>
 
         {% if announcements is empty %}
             <div class="empty">
                 <div class="empty__icon">🔍</div>
                 <h3>Aucune annonce trouvée</h3>
-                <p>{% if term %}Essaie avec un autre mot-clé.{% else %}Il n'y a encore aucune annonce publiée.{% endif %}</p>
-                {% if term %}<a href="{{ path('announcement_index') }}" class="btn btn-outline">Voir toutes les annonces</a>{% endif %}
+                <p>{% if term or search.hasFilters %}Essaie avec un autre mot-clé ou moins de filtres.{% else %}Il n'y a encore aucune annonce publiée.{% endif %}</p>
+                {% if term or search.hasFilters %}<a href="{{ path('announcement_index') }}" class="btn btn-outline">Voir toutes les annonces</a>{% endif %}
             </div>
         {% else %}
             <div class="grid">
@@ -38,7 +95,6 @@
                     {% include 'announcement/_card.html.twig' with {
                         announcement: announcement,
                         books: booksByAnnouncement[announcement.id] ?? [],
-                        delay: (loop.index0 % 4) * 60
                     } %}
                 {% endfor %}
             </div>
@@ -46,11 +102,11 @@
             {% if pages > 1 %}
                 <nav class="pagination" aria-label="Pagination">
                     {% if page > 1 %}
-                        <a href="{{ path('announcement_index', {q: term, page: page - 1}) }}" class="btn btn-outline">← Précédent</a>
+                        <a href="{{ path('announcement_index', app.request.query.all|merge({page: page - 1})) }}" class="btn btn-outline">← Précédent</a>
                     {% endif %}
                     <span class="pagination__info">Page {{ page }} sur {{ pages }}</span>
                     {% if page < pages %}
-                        <a href="{{ path('announcement_index', {q: term, page: page + 1}) }}" class="btn btn-outline">Suivant →</a>
+                        <a href="{{ path('announcement_index', app.request.query.all|merge({page: page + 1})) }}" class="btn btn-outline">Suivant →</a>
                     {% endif %}
                 </nav>
             {% endif %}

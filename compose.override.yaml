@@ -35,3 +35,15 @@ services:
     ports:
       - "3306"
 ###< doctrine/doctrine-bundle ###
+
+###> symfony/mailer ###
+  # Faux serveur mail de développement : tous les emails envoyés par l'app sont lisibles sur http://localhost:8025
+  mailer:
+    image: axllent/mailpit
+    ports:
+      - "1025"
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+###< symfony/mailer ###
