@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
+
+{% block title %}Échange : {{ announcement.title }}{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <nav class="breadcrumb"><a href="{{ path('exchange_index') }}">← Mes échanges</a></nav>
+
+        <div class="chat-layout">
+            <section class="chat-card">
+                <header class="chat-card__head">
+                    {{ ui.avatar(other, 'lg') }}
+                    <div>
+                        <strong>{{ other.username }}</strong>
+                        <span>À propos de « {{ announcement.title }} »</span>
+                    </div>
+                    <div style="margin-left:auto">{{ ui.exchange_status(exchange.status) }}</div>
+                </header>
+
+                <div class="chat" data-chat>
+                    {% set lastDay = null %}
+                    {% for message in messages %}
+                        {% set day = message.sentAt|date('d/m/Y') %}
+                        {% if day != lastDay %}
+                            <span class="chat__day">{{ day == 'now'|date('d/m/Y') ? 'Aujourd’hui' : day }}</span>
+                            {% set lastDay = day %}
+                        {% endif %}
+
+                        {% set mine = message.sender and message.sender.id == app.user.id %}
+                        <div class="bubble {{ mine ? 'bubble--mine' : 'bubble--theirs' }}">
+                            {% if not message.sender %}<strong class="small">Utilisateur supprimé</strong><br>{% endif %}
+                            {{ message.content|nl2br }}
+                            <span class="bubble__time">{{ message.sentAt|date('H:i') }}</span>
+                        </div>
+                    {% else %}
+                        <p class="muted" style="text-align:center;margin:auto">Aucun message pour l'instant.</p>
+                    {% endfor %}
+                    <div id="bottom"></div>
+                </div>
+
+                {{ form_start(form, {attr: {class: 'chat-form form'}}) }}
+                    <div class="chat-form__field">
+                        {{ form_errors(form.content) }}
+                        {{ form_widget(form.content, {attr: {rows: 1, 'data-autogrow': ''}}) }}
+                    </div>
+                    <button type="submit" class="btn btn-primary" aria-label="Envoyer">
+                        Envoyer
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </button>
+                {{ form_end(form) }}
+            </section>
+
+            <aside class="panel">
+                <p class="eyebrow" style="margin-bottom:10px">L'annonce</p>
+                <div style="max-width:120px;margin-bottom:16px">{{ ui.cover(announcement.title, null, announcement.id) }}</div>
+                <h3>{{ announcement.title }}</h3>
+                <div class="badges" style="margin-bottom:14px">
+                    {{ ui.type_badge(announcement.type) }}
+                    {{ ui.announcement_status(announcement.status) }}
+                </div>
+                {{ ui.price(announcement) }}
+                <p class="small muted" style="margin-top:12px">Demande ouverte le {{ exchange.initiatedAt|date('d/m/Y') }}</p>
+                <a href="{{ path('announcement_show', {id: announcement.id}) }}" class="btn btn-outline btn-block">Voir l'annonce</a>
+            </aside>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+    // Toujours afficher le dernier message
+    const chat = document.querySelector('[data-chat]');
+    if (chat) chat.scrollTop = chat.scrollHeight;
+
+    // Zone de saisie qui s'agrandit + Entrée pour envoyer (Maj+Entrée = retour à la ligne)
+    const field = document.querySelector('[data-autogrow]');
+    if (!field) return;
+    function grow() {
+        field.style.height = 'auto';
+        field.style.height = Math.min(field.scrollHeight, 180) + 'px';
+    }
+    field.addEventListener('input', grow);
+    field.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey && field.value.trim() !== '') {
+            event.preventDefault();
+            field.form.requestSubmit();
+        }
+    });
+    field.focus();
+})();
+</script>
+{% endblock %}

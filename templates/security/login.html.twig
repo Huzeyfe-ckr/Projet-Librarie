@@ -1,38 +1,42 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
 
 {% block title %}Connexion{% endblock %}
 
-{% block stylesheets %}
-<style>
-    .auth-box { max-width: 420px; margin: 60px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 30px; }
-    .auth-box h1 { margin-top: 0; }
-    .auth-box label { display: block; margin: 14px 0 6px; font-weight: 600; }
-    .auth-box input[type=email], .auth-box input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; }
-    .auth-box button { width: 100%; margin-top: 22px; }
-    .auth-box .alt { text-align: center; margin-top: 16px; }
-</style>
-{% endblock %}
-
 {% block body %}
-    <div class="auth-box">
-        <h1>Connexion</h1>
+    <div class="auth">
+        <figure class="auth__art">
+            <div>
+                <blockquote>« Un livre est un jardin que l'on porte dans sa poche. »</blockquote>
+                <figcaption>Proverbe arabe</figcaption>
+            </div>
+            {{ ui.shelf(1) }}
+        </figure>
 
-        {% if error %}
-            <div class="flash flash-error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-        {% endif %}
+        <div class="auth__form">
+            <div>
+                <p class="eyebrow">Content de te revoir</p>
+                <h1>Connexion</h1>
+                <p class="muted">Retrouve tes annonces et tes conversations.</p>
 
-        <form method="post">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ last_username }}" autocomplete="email" required autofocus>
+                {% if error %}
+                    <div class="flash flash--error" style="margin:20px 0 0">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                {% endif %}
 
-            <label for="password">Mot de passe</label>
-            <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <form method="post" class="form">
+                    <label for="email">Adresse email</label>
+                    <input type="email" id="email" name="email" value="{{ last_username }}" autocomplete="email" placeholder="toi@exemple.fr" required autofocus>
 
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
 
-            <button type="submit" class="btn btn-primary">Se connecter</button>
-        </form>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-        <p class="alt">Pas encore de compte ? <a href="{{ path('app_register') }}">Inscris-toi</a></p>
+                    <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:24px">Se connecter</button>
+                </form>
+
+                <p class="auth__alt">Pas encore de compte ? <a href="{{ path('app_register') }}">Inscris-toi</a></p>
+            </div>
+        </div>
     </div>
 {% endblock %}

@@ -1,19 +1,52 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Inscription{% endblock %}
 
 {% block body %}
-    <h1>Register</h1>
+    <div class="auth">
+        <figure class="auth__art" style="background: var(--terracotta)">
+            <div>
+                <blockquote>« Lire, c'est boire et manger. L'esprit qui ne lit pas maigrit comme le corps qui ne mange pas. »</blockquote>
+                <figcaption>Victor Hugo</figcaption>
+            </div>
+            {{ ui.shelf(1) }}
+        </figure>
 
-    {{ form_errors(registrationForm) }}
+        <div class="auth__form">
+            <div>
+                <p class="eyebrow">Rejoins les lecteurs</p>
+                <h1>Créer un compte</h1>
+                <p class="muted">Gratuit, et prêt en moins d'une minute.</p>
 
-    {{ form_start(registrationForm) }}
-    {{ form_row(registrationForm.username) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
+                {{ form_start(registrationForm, {attr: {class: 'form'}}) }}
+                    {{ form_errors(registrationForm) }}
 
-        <button type="submit" class="btn">Register</button>
-    {{ form_end(registrationForm) }}
+                    {{ form_row(registrationForm.username, {
+                        label: "Nom d'utilisateur",
+                        attr: {placeholder: 'lecteur_du_dimanche', autocomplete: 'username'}
+                    }) }}
+                    {{ form_row(registrationForm.email, {
+                        label: 'Adresse email',
+                        attr: {placeholder: 'toi@exemple.fr', autocomplete: 'email'}
+                    }) }}
+                    {{ form_row(registrationForm.plainPassword, {
+                        label: 'Mot de passe',
+                        help: 'Choisis un mot de passe solide : mélange lettres, chiffres et symboles.',
+                        attr: {placeholder: '••••••••'}
+                    }) }}
+
+                    <div class="checkbox-row">
+                        {{ form_widget(registrationForm.agreeTerms) }}
+                        {{ form_label(registrationForm.agreeTerms, "J'accepte les conditions générales d'utilisation") }}
+                    </div>
+                    {{ form_errors(registrationForm.agreeTerms) }}
+
+                    <button type="submit" class="btn btn-accent btn-block btn-lg" style="margin-top:24px">Créer mon compte</button>
+                {{ form_end(registrationForm) }}
+
+                <p class="auth__alt">Déjà inscrit ? <a href="{{ path('app_login') }}">Connecte-toi</a></p>
+            </div>
+        </div>
+    </div>
 {% endblock %}

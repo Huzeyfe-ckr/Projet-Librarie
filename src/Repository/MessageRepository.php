@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Exchange;
 use App\Entity\Message;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,28 +17,19 @@ class MessageRepository extends ServiceEntityRepository
         parent::__construct($registry, Message::class);
     }
 
-//    /**
-//     * @return Message[] Returns an array of Message objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('m.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?Message
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /**
+     * @return Message[]
+     */
+    public function findActiveByExchange(Exchange $exchange): array
+    {
+        return $this->createQueryBuilder('m')
+            ->leftJoin('m.sender', 's')->addSelect('s')
+            ->andWhere('m.exchange = :exchange')
+            ->andWhere('m.inactivatedAt IS NULL')
+            ->setParameter('exchange', $exchange)
+            ->orderBy('m.sentAt', 'ASC')
+            ->addOrderBy('m.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

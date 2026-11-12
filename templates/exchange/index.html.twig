@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
+
+{% block title %}Mes échanges{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width:880px">
+        <header class="page-head">
+            <p class="eyebrow">Messagerie</p>
+            <h1>Mes échanges <span class="count">{{ exchanges|length }}</span></h1>
+            <p class="muted">Les demandes que tu as envoyées et celles reçues sur tes annonces.</p>
+        </header>
+
+        {% if exchanges is empty %}
+            <div class="empty" style="margin-top:24px">
+                <div class="empty__icon">✉️</div>
+                <h3>Aucun échange pour le moment</h3>
+                <p>Trouve un livre qui te plaît et envoie une demande à son propriétaire.</p>
+                <a href="{{ path('announcement_index') }}" class="btn btn-primary">Parcourir les annonces</a>
+            </div>
+        {% else %}
+            {% set received = exchanges|filter(e => e.announcement.user.id == app.user.id)|length %}
+
+            <div class="tabs" role="tablist" data-tabs style="margin-top:16px">
+                <button type="button" class="is-active" data-filter="all">Tous ({{ exchanges|length }})</button>
+                <button type="button" data-filter="received">Reçus ({{ received }})</button>
+                <button type="button" data-filter="sent">Envoyés ({{ exchanges|length - received }})</button>
+            </div>
+
+            <div class="exchange-list">
+                {% for exchange in exchanges %}
+                    {% set mine = exchange.announcement.user.id == app.user.id %}
+                    {% set other = mine ? exchange.requester : exchange.announcement.user %}
+                    <article class="exchange-item reveal" data-kind="{{ mine ? 'received' : 'sent' }}" style="--d: {{ (loop.index0 % 6) * 50 }}ms">
+                        {{ ui.cover('', null, exchange.announcement.id) }}
+                        <div>
+                            <h3><a href="{{ path('exchange_show', {id: exchange.id}) }}">{{ exchange.announcement.title }}</a></h3>
+                            <p>
+                                {{ mine ? 'Demande de' : 'Avec' }} <strong>{{ other.username }}</strong>
+                                · {{ exchange.initiatedAt|date('d/m/Y') }}
+                            </p>
+                        </div>
+                        <div class="exchange-item__side">
+                            {{ ui.exchange_status(exchange.status) }}
+                            <span class="badge badge--outline">{{ mine ? '↓ Reçue' : '↑ Envoyée' }}</span>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+    const tabs = document.querySelector('[data-tabs]');
+    if (!tabs) return;
+    const items = document.querySelectorAll('[data-kind]');
+    tabs.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-filter]');
+        if (!button) return;
+        tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === button); });
+        const filter = button.dataset.filter;
+        items.forEach(function (item) {
+            item.hidden = filter !== 'all' && item.dataset.kind !== filter;
+        });
+    });
+})();
+</script>
+{% endblock %}

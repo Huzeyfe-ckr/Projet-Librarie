@@ -2,66 +2,62 @@
 
 {% block title %}Publier un livre ou un pack{% endblock %}
 
-{% block stylesheets %}
-<style>
-    .form-box { max-width: 760px; margin: 40px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 30px; }
-    .form-box h1 { margin-top: 0; }
-    .form-box h2 { margin: 28px 0 6px; font-size: 1.15rem; }
-    .form-box label { display: block; margin: 14px 0 6px; font-weight: 600; }
-    .form-box input:not([type=checkbox]):not([type=file]), .form-box textarea, .form-box select {
-        width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; background: #fff;
-    }
-    .form-box ul { color: #8a2b2b; padding-left: 18px; margin: 6px 0 0; }
-    .form-box .help-text { color: var(--muted); font-size: .85rem; margin: 4px 0 0; }
-    .form-actions { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
-
-    .book-entry { border: 1px solid var(--border); border-radius: 10px; padding: 6px 18px 18px; margin: 14px 0; background: #fcfbf9; }
-    .book-entry-header { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; }
-    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .link-danger { background: none; border: none; color: #8a2b2b; cursor: pointer; font-size: .9rem; padding: 0; }
-    .link-danger:hover { text-decoration: underline; }
-    button[disabled] { opacity: .5; cursor: not-allowed; }
-    [hidden] { display: none !important; }
-
-    @media (max-width: 640px) { .two-cols { grid-template-columns: 1fr; } }
-</style>
-{% endblock %}
-
 {% block body %}
     {% set prototype_html %}
         {% include 'book/_book_entry.html.twig' with {f: form.books.vars.prototype} only %}
     {% endset %}
 
-    <div class="form-box">
-        <h1>Publier un livre ou un pack</h1>
-        <p class="meta">Un seul livre, ou plusieurs regroupés sous une même annonce (pack, don en groupe).</p>
+    <div class="container">
+        <div class="form-card">
+            <header class="page-head" style="padding-top:8px">
+                <p class="eyebrow">Nouvelle annonce</p>
+                <h1>Publier un livre ou un pack</h1>
+                <p class="muted">Un seul livre, ou plusieurs regroupés sous une même annonce : idéal pour vider une étagère d'un coup.</p>
+            </header>
 
-        {{ form_start(form) }}
-            <h2>L'annonce</h2>
-            {{ form_row(form.title) }}
-            {{ form_row(form.type) }}
-            {{ form_row(form.price) }}
-            {{ form_row(form.description) }}
+            {{ form_start(form, {attr: {class: 'form'}}) }}
+                {{ form_errors(form) }}
 
-            <h2>Les livres</h2>
-            {{ form_errors(form.books) }}
+                <section class="form-section">
+                    <h2 class="form-section__title"><b>1</b> L'annonce</h2>
+                    <p>Comment veux-tu proposer tes livres ?</p>
 
-            <div id="book-list"
-                 data-prototype="{{ prototype_html|e('html_attr') }}"
-                 data-max="{{ maxBooks }}">
-                {% for entry in form.books %}
-                    {% include 'book/_book_entry.html.twig' with {f: entry} only %}
-                {% endfor %}
-            </div>
-            {% do form.books.setRendered %}
+                    {{ form_row(form.title, {attr: {placeholder: 'Ex. : Lot de romans policiers'}}) }}
+                    <div class="form-row-2">
+                        {{ form_row(form.type) }}
+                        <div>
+                            {{ form_label(form.price) }}
+                            <div class="money">{{ form_widget(form.price, {attr: {placeholder: '0,00'}}) }}</div>
+                            {{ form_help(form.price) }}
+                            {{ form_errors(form.price) }}
+                        </div>
+                    </div>
+                    {{ form_row(form.description, {attr: {placeholder: 'État général, lieu de remise, disponibilités…'}}) }}
+                </section>
 
-            <button type="button" id="add-book" class="btn btn-outline">+ Ajouter un livre au pack</button>
+                <section class="form-section">
+                    <h2 class="form-section__title"><b>2</b> Les livres</h2>
+                    <p>Ajoute autant de livres que tu veux (jusqu'à {{ maxBooks }}).</p>
+                    {{ form_errors(form.books) }}
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Publier</button>
-                <a href="{{ path('announcement_index') }}" class="btn btn-outline">Annuler</a>
-            </div>
-        {{ form_end(form) }}
+                    <div id="book-list"
+                         data-prototype="{{ prototype_html|e('html_attr') }}"
+                         data-max="{{ maxBooks }}">
+                        {% for entry in form.books %}
+                            {% include 'book/_book_entry.html.twig' with {f: entry} only %}
+                        {% endfor %}
+                    </div>
+                    {% do form.books.setRendered %}
+
+                    <button type="button" id="add-book" class="add-book">+ Ajouter un livre au pack</button>
+                </section>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">Publier l'annonce</button>
+                    <a href="{{ path('announcement_index') }}" class="btn btn-ghost">Annuler</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
     </div>
 {% endblock %}
 
@@ -81,14 +77,18 @@
             entry.querySelector('[data-remove-entry]').hidden = entries.length === 1;
         });
         addBtn.disabled = entries.length >= max;
+        addBtn.textContent = entries.length >= 1 ? '+ Ajouter un livre au pack' : '+ Ajouter un livre';
     }
 
     addBtn.addEventListener('click', function () {
         const html = list.dataset.prototype.replace(/__name__/g, nextIndex++);
         const holder = document.createElement('div');
         holder.innerHTML = html.trim();
-        list.appendChild(holder.firstElementChild);
+        const entry = holder.firstElementChild;
+        list.appendChild(entry);
         refresh();
+        const firstInput = entry.querySelector('input');
+        if (firstInput) firstInput.focus();
     });
 
     list.addEventListener('click', function (event) {
@@ -97,6 +97,20 @@
         button.closest('[data-book-entry]').remove();
         refresh();
     });
+
+    // Le prix n'a pas de sens pour un don : on désactive le champ
+    const type = document.getElementById('{{ form.type.vars.id }}');
+    const price = document.getElementById('{{ form.price.vars.id }}');
+    function syncPrice() {
+        const isDonation = type.value === 'donation';
+        price.disabled = isDonation;
+        if (isDonation) price.value = '';
+        price.closest('.money').style.opacity = isDonation ? '.5' : '1';
+    }
+    if (type && price) {
+        type.addEventListener('change', syncPrice);
+        syncPrice();
+    }
 
     refresh();
 })();

@@ -1,0 +1,132 @@
+{# =========================================================
+   Macros d'interface partagées
+   Usage : {% import '_partials/ui.html.twig' as ui %}
+   ========================================================= #}
+
+{% macro tone(seed) -%}
+    {{- ['green', 'terracotta', 'ochre', 'plum', 'slate', 'sage'][(seed ?? 0) % 6] -}}
+{%- endmacro %}
+
+{# Couverture de livre générée en CSS #}
+{% macro cover(title, author = null, seed = 0) %}
+    <div class="cover cover--{{ _self.tone(seed) }}" aria-hidden="true">
+        <span class="cover__title">{{ title }}</span>
+        {% if author %}<span class="cover__author">{{ author }}</span>{% endif %}
+        <span class="cover__ornament"></span>
+    </div>
+{% endmacro %}
+
+{# Une couverture, ou une pile si l'annonce contient plusieurs livres #}
+{% macro cover_for(announcement, books) %}
+    {% set first = books|first %}
+    {% if books|length > 1 %}
+        <div class="cover-stack">
+            {{ _self.cover(announcement.title, books|length ~ ' livres', announcement.id) }}
+            {{ _self.cover('', null, announcement.id + 1) }}
+            {{ _self.cover('', null, announcement.id + 2) }}
+        </div>
+    {% else %}
+        {{ _self.cover(first ? first.title : announcement.title, first ? first.author : null, announcement.id) }}
+    {% endif %}
+{% endmacro %}
+
+{# Avatar avec initiales #}
+{% macro avatar(user, size = null) %}
+    {% set name = user ? user.username : '?' %}
+    <span class="avatar avatar--{{ _self.tone(user ? user.id : 0) }} {{ size ? 'avatar--' ~ size }}" aria-hidden="true">{{ name|slice(0, 2) }}</span>
+{% endmacro %}
+
+{# ---------- Libellés en français ---------- #}
+
+{% macro type_label(type) -%}
+    {{- {donation: 'Don', sale: 'Vente'}[type.value] ?? type.name -}}
+{%- endmacro %}
+
+{% macro type_badge(type) %}
+    {% if type.value == 'donation' %}
+        <span class="badge badge--green">♥ Don</span>
+    {% else %}
+        <span class="badge badge--ochre">Vente</span>
+    {% endif %}
+{% endmacro %}
+
+{% macro condition_label(condition) -%}
+    {{- {
+        new: 'Neuf',
+        very_good: 'Très bon état',
+        good: 'Bon état',
+        acceptable: 'État correct',
+        poor: 'Abîmé'
+    }[condition.value] ?? condition.name -}}
+{%- endmacro %}
+
+{% macro condition(condition) %}
+    {% set level = {new: 5, very_good: 4, good: 3, acceptable: 2, poor: 1}[condition.value] ?? 0 %}
+    <span class="condition" title="{{ _self.condition_label(condition) }}">
+        <span class="condition__bar" aria-hidden="true">
+            {% for i in 1..5 %}<i class="{{ i <= level ? 'on' }}"></i>{% endfor %}
+        </span>
+        {{ _self.condition_label(condition) }}
+    </span>
+{% endmacro %}
+
+{% macro announcement_status(status) %}
+    {% set map = {
+        available: ['Disponible', 'green'],
+        reserved: ['Réservé', 'ochre'],
+        completed: ['Terminé', 'slate'],
+        cancelled: ['Annulé', 'danger']
+    } %}
+    {% set s = map[status.value] ?? [status.name, ''] %}
+    <span class="badge badge--dot badge--{{ s[1] }}">{{ s[0] }}</span>
+{% endmacro %}
+
+{% macro exchange_status(status) %}
+    {% set map = {
+        pending: ['En attente', 'ochre'],
+        accepted: ['Accepté', 'green'],
+        refused: ['Refusé', 'danger'],
+        completed: ['Terminé', 'slate'],
+        cancelled: ['Annulé', 'danger']
+    } %}
+    {% set s = map[status.value] ?? [status.name, ''] %}
+    <span class="badge badge--dot badge--{{ s[1] }}">{{ s[0] }}</span>
+{% endmacro %}
+
+{% macro price(announcement) %}
+    {% if announcement.price is null %}
+        <span class="price-tag price-tag--free">Gratuit</span>
+    {% else %}
+        <span class="price-tag">{{ announcement.price|number_format(2, ',', ' ') }}&nbsp;€</span>
+    {% endif %}
+{% endmacro %}
+
+{# Étagère décorative #}
+{% macro shelf(rows = 2) %}
+    {% set spines = [
+        ['green', 34, 82, ''], ['terracotta', 44, 96, 'Les Misérables'], ['ochre', 28, 74, ''],
+        ['plum', 40, 90, 'Candide'], ['slate', 32, 78, ''], ['sage', 46, 100, 'Germinal'],
+        ['terracotta', 30, 70, ''], ['green', 38, 88, 'Nana']
+    ] %}
+    <div class="shelf" aria-hidden="true">
+        <div class="shelf__row">
+            {% for s in spines %}
+                <div class="spine {{ s[3] ? 'spine--label' }} {{ loop.index == 7 ? 'spine--lean' }}"
+                     style="--c: var(--{{ s[0] }}); --w: {{ s[1] }}px; --h: {{ s[2] }}%; --i: {{ loop.index }}">
+                    {% if s[3] %}<span>{{ s[3] }}</span>{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        {% if rows > 1 %}
+            <div class="shelf__row">
+                {% for s in spines|slice(2, 5)|reverse %}
+                    <div class="spine {{ s[3] ? 'spine--label' }}"
+                         style="--c: var(--{{ s[0] }}); --w: {{ s[1] }}px; --h: {{ s[2] - 6 }}%; --i: {{ loop.index + 8 }}">
+                        {% if s[3] %}<span>{{ s[3] }}</span>{% endif %}
+                    </div>
+                {% endfor %}
+                <div class="shelf__plant"></div>
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}

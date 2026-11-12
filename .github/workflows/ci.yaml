@@ -45,20 +45,13 @@ jobs:
         run: curl -v --fail-with-body http://localhost
       - name: Check Mercure reachability
         run: curl -vI --insecure --fail-with-body https://localhost/.well-known/mercure?topic=test
+      - name: PHP syntax check
+        run: docker compose exec -T php sh -c 'find src config -name "*.php" -print0 | xargs -0 -n1 php -l > /dev/null'
       - name: Symfony lint (YAML, Twig, container)
         run: |
           docker compose exec -T php bin/console lint:yaml config --parse-tags
           docker compose exec -T php bin/console lint:twig templates
           docker compose exec -T php bin/console lint:container
-      # Décommente ces étapes quand la base de test fonctionne dans la CI
-      # - name: Create test database
-      #   run: docker compose exec -T php bin/console -e test doctrine:database:create
-      # - name: Run migrations
-      #   run: docker compose exec -T php bin/console -e test doctrine:migrations:migrate --no-interaction
-      # - name: Doctrine Schema Validator
-      #   run: docker compose exec -T php bin/console -e test doctrine:schema:validate
-      # - name: Run PHPUnit
-      #   run: docker compose exec -T php bin/phpunit
 
   lint:
     name: Lint
@@ -82,7 +75,8 @@ jobs:
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
           VALIDATE_PYTHON_BLACK: false
-          # Ces linters lancent `composer install` dans un conteneur PHP 8.4
-          # sans ext-xml, alors que le projet exige PHP >= 8.5.9
-          VALIDATE_PHP_PHPSTAN: false
-          VALIDATE_PHP_PSALM: false
+          VALIDATE_GIT_COMMITLINT: false
+          # Le PHP est vérifié dans le job "Tests" (PHP 8.5 + ext-xml).
+          # Super-linter lance composer install dès qu'il voit un fichier PHP,
+          # dans une image PHP 8.4 sans ext-xml : ça échoue toujours.
+          FILTER_REGEX_EXCLUDE: '.*\.php$'

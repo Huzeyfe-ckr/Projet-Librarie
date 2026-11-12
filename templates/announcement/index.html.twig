@@ -3,41 +3,57 @@
 {% block title %}Annonces{% endblock %}
 
 {% block body %}
-    <div class="section-title" style="margin-top: 30px;">
-        <h1>Annonces <small class="meta">({{ total }})</small></h1>
-        {% if app.user %}
-            <a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>
-        {% endif %}
-    </div>
+    <div class="container">
+        <header class="page-head">
+            <p class="eyebrow">Le catalogue</p>
+            <h1>
+                {% if term %}Résultats pour « {{ term }} »{% else %}Toutes les annonces{% endif %}
+                <span class="count">{{ total }} annonce{{ total > 1 ? 's' }}</span>
+            </h1>
+        </header>
 
-    <form method="get" class="search-form">
-        <input type="search" name="q" value="{{ term }}" placeholder="Rechercher un titre, un mot de la description…">
-        <button type="submit" class="btn btn-primary">Rechercher</button>
-        {% if term %}<a href="{{ path('announcement_index') }}" class="btn btn-outline">Effacer</a>{% endif %}
-    </form>
-
-    {% if announcements is empty %}
-        <div class="empty">Aucune annonce trouvée.</div>
-    {% else %}
-        <div class="grid">
-            {% for announcement in announcements %}
-                {% include 'announcement/_card.html.twig' with {
-                    announcement: announcement,
-                    books: booksByAnnouncement[announcement.id] ?? []
-                } %}
-            {% endfor %}
+        <div class="toolbar">
+            <form method="get" class="searchbar" role="search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <label for="search" class="sr-only">Rechercher</label>
+                <input id="search" type="search" name="q" value="{{ term }}" placeholder="Rechercher un titre, un mot de la description…">
+                {% if term %}<a href="{{ path('announcement_index') }}" class="btn btn-ghost">Effacer</a>{% endif %}
+                <button type="submit" class="btn btn-primary">Rechercher</button>
+            </form>
+            {% if app.user %}
+                <a href="{{ path('book_new') }}" class="btn btn-accent">+ Publier un livre</a>
+            {% endif %}
         </div>
 
-        {% if pages > 1 %}
-            <nav class="pagination">
-                {% if page > 1 %}
-                    <a href="{{ path('announcement_index', {q: term, page: page - 1}) }}" class="btn btn-outline">← Précédent</a>
-                {% endif %}
-                <span>Page {{ page }} / {{ pages }}</span>
-                {% if page < pages %}
-                    <a href="{{ path('announcement_index', {q: term, page: page + 1}) }}" class="btn btn-outline">Suivant →</a>
-                {% endif %}
-            </nav>
+        {% if announcements is empty %}
+            <div class="empty">
+                <div class="empty__icon">🔍</div>
+                <h3>Aucune annonce trouvée</h3>
+                <p>{% if term %}Essaie avec un autre mot-clé.{% else %}Il n'y a encore aucune annonce publiée.{% endif %}</p>
+                {% if term %}<a href="{{ path('announcement_index') }}" class="btn btn-outline">Voir toutes les annonces</a>{% endif %}
+            </div>
+        {% else %}
+            <div class="grid">
+                {% for announcement in announcements %}
+                    {% include 'announcement/_card.html.twig' with {
+                        announcement: announcement,
+                        books: booksByAnnouncement[announcement.id] ?? [],
+                        delay: (loop.index0 % 4) * 60
+                    } %}
+                {% endfor %}
+            </div>
+
+            {% if pages > 1 %}
+                <nav class="pagination" aria-label="Pagination">
+                    {% if page > 1 %}
+                        <a href="{{ path('announcement_index', {q: term, page: page - 1}) }}" class="btn btn-outline">← Précédent</a>
+                    {% endif %}
+                    <span class="pagination__info">Page {{ page }} sur {{ pages }}</span>
+                    {% if page < pages %}
+                        <a href="{{ path('announcement_index', {q: term, page: page + 1}) }}" class="btn btn-outline">Suivant →</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
         {% endif %}
-    {% endif %}
+    </div>
 {% endblock %}

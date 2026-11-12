@@ -1,70 +1,117 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
 
-{% block title %}Accueil — BookShare{% endblock %}
-
-{% block stylesheets %}
-<style>
-    .hero { text-align: center; padding: 70px 0 50px; }
-    .hero h1 { font-size: 2.6rem; margin: 0 0 12px; }
-    .hero p { color: var(--muted); font-size: 1.15rem; max-width: 600px; margin: 0 auto 28px; }
-    .hero .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0 50px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; text-align: center; }
-    .stat strong { display: block; font-size: 2rem; color: var(--primary); }
-    .stat span { color: var(--muted); }
-
-    .section-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
-    .section-title h2 { margin: 0; }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-    .card h3 { margin: 0 0 6px; }
-    .card p { margin: 0; color: var(--muted); }
-    .empty { text-align: center; color: var(--muted); padding: 40px; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
-
-    @media (max-width: 640px) { .stats { grid-template-columns: 1fr; } .hero h1 { font-size: 2rem; } }
-</style>
-{% endblock %}
+{% block title %}Accueil{% endblock %}
 
 {% block body %}
     <section class="hero">
-        {% if app.user %}
-            <h1>Bon retour, {{ app.user.username }} 👋</h1>
-            <p>Découvre les derniers livres proposés ou mets le tien à disposition.</p>
-        {% else %}
-            <h1>Donne une seconde vie à tes livres</h1>
-            <p>Offre, vends ou échange tes livres avec d'autres lecteurs, et trouve ta prochaine lecture.</p>
-            <div class="actions">
-                <a href="{{ path('app_register') }}" class="btn btn-primary">Créer un compte</a>
-                <a href="{{ path('app_login') }}" class="btn btn-outline">Se connecter</a>
+        <div class="container hero__grid">
+            <div>
+                {% if app.user %}
+                    <p class="eyebrow">Bon retour, {{ app.user.username }}</p>
+                    <h1>Quelle sera ta <em>prochaine</em> lecture&nbsp;?</h1>
+                    <p class="hero__lead">De nouveaux livres attendent un lecteur. Fouille les étagères ou mets les tiens en circulation.</p>
+                {% else %}
+                    <p class="eyebrow">Livres d'occasion entre lecteurs</p>
+                    <h1>Donne une <em>seconde vie</em> à tes livres.</h1>
+                    <p class="hero__lead">Offre, vends ou récupère des livres près de chez toi. Un roman seul ou un carton entier : chaque livre mérite un nouveau lecteur.</p>
+                {% endif %}
+
+                <form action="{{ path('announcement_index') }}" method="get" class="searchbar" role="search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <label for="hero-search" class="sr-only">Rechercher un livre</label>
+                    <input id="hero-search" type="search" name="q" placeholder="Un titre, un auteur, un genre…">
+                    <button type="submit" class="btn btn-primary">Chercher</button>
+                </form>
+
+                <div class="hero__actions">
+                    {% if app.user %}
+                        <a href="{{ path('book_new') }}" class="btn btn-accent btn-lg">Publier un livre</a>
+                        <a href="{{ path('exchange_index') }}" class="btn btn-outline btn-lg">Mes échanges</a>
+                    {% else %}
+                        <a href="{{ path('app_register') }}" class="btn btn-accent btn-lg">Créer mon compte</a>
+                        <a href="{{ path('announcement_index') }}" class="btn btn-outline btn-lg">Parcourir les annonces</a>
+                    {% endif %}
+                </div>
+
+                <div class="hero__stats">
+                    <div><strong>{{ stats.announcements }}</strong><span>annonce{{ stats.announcements > 1 ? 's' }}</span></div>
+                    <div><strong>{{ stats.books }}</strong><span>livre{{ stats.books > 1 ? 's' }} en circulation</span></div>
+                    <div><strong>{{ stats.users }}</strong><span>lecteur{{ stats.users > 1 ? 's' }}</span></div>
+                </div>
             </div>
-        {% endif %}
-    </section>
 
-    <section class="stats">
-        <div class="stat"><strong>{{ stats.announcements }}</strong><span>Annonces</span></div>
-        <div class="stat"><strong>{{ stats.books }}</strong><span>Livres</span></div>
-        <div class="stat"><strong>{{ stats.users }}</strong><span>Membres</span></div>
-    </section>
-
-        <section>
-        <div class="section-title">
-            <h2>Dernières annonces</h2>
-            <a href="{{ path('announcement_index') }}">Voir toutes les annonces →</a>
+            {{ ui.shelf(2) }}
         </div>
-
-        {% if latestAnnouncements is empty %}
-            <div class="empty">Aucune annonce pour le moment.</div>
-        {% else %}
-            <div class="grid">
-                {% for announcement in latestAnnouncements %}
-                    {% include 'announcement/_card.html.twig' with {
-                        announcement: announcement,
-                        books: booksByAnnouncement[announcement.id] ?? []
-                    } %}
-                {% endfor %}
-            </div>
-        {% endif %}
     </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="section-head reveal">
+                <div>
+                    <p class="eyebrow">Fraîchement déposés</p>
+                    <h2>Dernières annonces</h2>
+                </div>
+                <a href="{{ path('announcement_index') }}" class="link-arrow">Tout voir <span>→</span></a>
+            </div>
+
+            {% if latestAnnouncements is empty %}
+                <div class="empty reveal">
+                    <div class="empty__icon">📚</div>
+                    <h3>Les étagères sont vides</h3>
+                    <p>Sois le premier à proposer un livre.</p>
+                    {% if app.user %}<a href="{{ path('book_new') }}" class="btn btn-primary">Publier un livre</a>{% endif %}
+                </div>
+            {% else %}
+                <div class="grid">
+                    {% for announcement in latestAnnouncements %}
+                        {% include 'announcement/_card.html.twig' with {
+                            announcement: announcement,
+                            books: booksByAnnouncement[announcement.id] ?? [],
+                            delay: loop.index0 * 70
+                        } %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="section-head reveal">
+                <div>
+                    <p class="eyebrow">Comment ça marche</p>
+                    <h2>Trois étapes, zéro prise de tête</h2>
+                </div>
+            </div>
+            <div class="steps">
+                <article class="step reveal" style="--d: 0ms">
+                    <h3>Dépose tes livres</h3>
+                    <p>Un seul livre ou tout un carton en pack. Choisis de le donner ou de le vendre, et indique son état.</p>
+                </article>
+                <article class="step reveal" style="--d: 90ms">
+                    <h3>Discute avec les lecteurs</h3>
+                    <p>Les intéressés t'écrivent directement depuis l'annonce. Une conversation par demande, tout est centralisé.</p>
+                </article>
+                <article class="step reveal" style="--d: 180ms">
+                    <h3>Faites l'échange</h3>
+                    <p>Vous convenez d'un rendez-vous, le livre change de mains et repart pour un nouveau chapitre.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    {% if not app.user %}
+        <section class="section--tight">
+            <div class="container">
+                <div class="band reveal">
+                    <div>
+                        <h2>Ta bibliothèque déborde&nbsp;?</h2>
+                        <p>Crée un compte en 30 secondes et publie ton premier livre.</p>
+                    </div>
+                    <a href="{{ path('app_register') }}" class="btn btn-lg">Je m'inscris</a>
+                </div>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}

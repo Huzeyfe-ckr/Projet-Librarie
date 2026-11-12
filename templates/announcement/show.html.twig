@@ -1,49 +1,171 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/ui.html.twig' as ui %}
 
 {% block title %}{{ announcement.title }}{% endblock %}
 
 {% block body %}
-    <p style="margin-top: 24px;"><a href="{{ path('announcement_index') }}">← Retour aux annonces</a></p>
+    {% set seller = announcement.user %}
+    {% set isOwner = app.user and app.user.id == seller.id %}
 
-    {% if announcement.inactivatedAt %}
-        <div class="flash flash-error">
-            Cette annonce est désactivée depuis le {{ announcement.inactivatedAt|date('d/m/Y') }}. Seuls les administrateurs peuvent la voir.
-        </div>
-    {% endif %}
+    <div class="container">
+        <nav class="breadcrumb"><a href="{{ path('announcement_index') }}">← Retour aux annonces</a></nav>
 
-    <article class="detail">
-       <div class="card-badges">
-    {% if books|length > 1 %}<span class="badge badge-pack">📦 Pack de {{ books|length }} livres</span>{% endif %}
-    <span class="badge">{{ announcement.type.name }}</span>
-            <span class="badge">{{ announcement.status.name }}</span>
-            {% if announcement.price is not null %}
-                <span class="badge badge-price">{{ announcement.price|number_format(2, ',', ' ') }} €</span>
-            {% endif %}
-        </div>
-
-        <h1>{{ announcement.title }}</h1>
-        <p class="meta">Publiée par <strong>{{ announcement.user.username }}</strong> le {{ announcement.createdAt|date('d/m/Y') }}</p>
-
-        <h2>Description</h2>
-        {% if announcement.description %}
-            <p>{{ announcement.description|nl2br }}</p>
-        {% else %}
-            <p class="meta">Aucune description.</p>
+        {% if announcement.inactivatedAt %}
+            <div class="flashes">
+                <div class="flash flash--warning">
+                    Annonce désactivée depuis le {{ announcement.inactivatedAt|date('d/m/Y') }}. Seuls les administrateurs peuvent la voir.
+                </div>
+            </div>
         {% endif %}
 
-        <h2>{{ books|length > 1 ? 'Les ' ~ books|length ~ ' livres du pack' : 'Livre' }}</h2>
-        {% for book in books %}
-            <div class="book-box">
-                <strong>{{ book.title }}</strong>
-                <ul>
-                    {% if book.author %}<li>Auteur : {{ book.author }}</li>{% endif %}
-                    {% if book.genre %}<li>Genre : {{ book.genre }}</li>{% endif %}
-                    {% if book.isbn %}<li>ISBN : {{ book.isbn }}</li>{% endif %}
-                    <li>État : {{ book.bookCondition.name }}</li>
-                </ul>
+        <div class="detail-grid">
+            {# ===== Colonne gauche : visuel + action ===== #}
+            <aside class="detail-aside">
+                <div class="detail-aside__visual">
+                    {{ ui.cover_for(announcement, books) }}
+                </div>
+
+                <div class="panel">
+                    <p class="small muted" style="margin:0">{{ lot ? 'Prix du lot' : 'Prix' }}</p>
+                    {{ ui.price(announcement) }}
+                    {% if lot and announcement.price is not null %}<p class="small muted" style="margin:0">pour les {{ lot.count }} livres</p>{% endif %}
+
+                    <div class="seller">
+                        {{ ui.avatar(seller, 'lg') }}
+                        <div>
+                            <strong>{{ seller.username }}</strong>
+                            <span>Membre depuis {{ seller.createdAt|date('m/Y') }}</span>
+                        </div>
+                    </div>
+
+                    {% if not app.user %}
+                        <p class="small muted">Connecte-toi pour contacter {{ seller.username }}.</p>
+                        <a href="{{ path('app_login') }}" class="btn btn-primary btn-block">Se connecter</a>
+                    {% elseif isOwner %}
+                        <p class="small muted">C'est ton annonce. Les demandes reçues arrivent dans tes échanges.</p>
+                        <a href="{{ path('exchange_index') }}" class="btn btn-outline btn-block">Voir mes échanges</a>
+                    {% elseif myExchange %}
+                        <p class="small muted" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                            Ta demande : {{ ui.exchange_status(myExchange.status) }}
+                        </p>
+                        <a href="{{ path('exchange_show', {id: myExchange.id}) }}" class="btn btn-primary btn-block">Ouvrir la conversation</a>
+                    {% elseif announcement.status.value == 'available' %}
+                        <form method="post" action="{{ path('exchange_request', {id: announcement.id}) }}" class="form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('exchange_request_' ~ announcement.id) }}">
+                            <label for="request-message" style="margin-top:0">Un petit mot pour {{ seller.username }}</label>
+                            <textarea id="request-message" name="message" rows="3" maxlength="2000" placeholder="Bonjour, est-il toujours disponible ? (facultatif)"></textarea>
+                            <button type="submit" class="btn btn-accent btn-block" style="margin-top:12px">
+                                {{ lot ? 'Demander ce lot' : 'Demander ce livre' }}
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="small muted">Cette annonce n'est plus disponible.</p>
+                    {% endif %}
+                </div>
+            </aside>
+
+            {# ===== Colonne droite : contenu ===== #}
+            <div class="detail-main">
+                <div class="badges">
+                    {{ ui.type_badge(announcement.type) }}
+                    {{ ui.announcement_status(announcement.status) }}
+                    {% if lot %}<span class="badge badge--plum">Pack · {{ lot.count }} livres</span>{% endif %}
+                </div>
+
+                <h1>{{ announcement.title }}</h1>
+                <p class="muted">Publiée le {{ announcement.createdAt|date('d/m/Y') }} par <strong>{{ seller.username }}</strong></p>
+
+                {% if lot %}
+                    <dl class="facts">
+                        <div><dt>Contenu</dt><dd>{{ lot.count }} livres</dd></div>
+                        {% if lot.authors is not empty %}
+                            <div><dt>{{ lot.authors|length > 1 ? 'Auteurs' : 'Auteur' }}</dt><dd>{{ lot.authors|join(', ') }}</dd></div>
+                        {% endif %}
+                        {% if lot.genres is not empty %}
+                            <div><dt>{{ lot.genres|length > 1 ? 'Genres' : 'Genre' }}</dt><dd>{{ lot.genres|join(', ') }}</dd></div>
+                        {% endif %}
+                        <div>
+                            <dt>États</dt>
+                            <dd>
+                                {% for item in lot.conditions %}
+                                    <span class="badge badge--outline">{{ item.count }} × {{ ui.condition_label(item.condition) }}</span>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    </dl>
+                {% endif %}
+
+                <h2 style="margin-top:32px">Description</h2>
+                {% if announcement.description %}
+                    <div class="prose"><p>{{ announcement.description|nl2br }}</p></div>
+                {% else %}
+                    <p class="muted">Le vendeur n'a pas ajouté de description.</p>
+                {% endif %}
+
+                <hr class="divider">
+
+                <h2>{{ books|length > 1 ? 'Les ' ~ books|length ~ ' livres du pack' : 'Le livre' }}</h2>
+                {% if books is empty %}
+                    <p class="muted">Aucun livre actif rattaché à cette annonce.</p>
+                {% else %}
+                    <ul class="book-list">
+                        {% for book in books %}
+                            <li class="book-row">
+                                {{ ui.cover('', null, book.id) }}
+                                <div>
+                                    <p class="book-row__title">{{ book.title }}</p>
+                                    <p class="book-row__meta">
+                                        {% if book.author %}<span>{{ book.author }}</span>{% endif %}
+                                        {% if book.genre %}<span>{{ book.genre }}</span>{% endif %}
+                                        {% if book.isbn %}<span>ISBN {{ book.isbn }}</span>{% endif %}
+                                    </p>
+                                </div>
+                                {{ ui.condition(book.bookCondition) }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <hr class="divider">
+
+                {# ===== Avis ===== #}
+                <section id="comments">
+                    <h2>Questions & avis <span class="muted" style="font-family:var(--font-body);font-size:1rem;font-weight:500">({{ comments|length }})</span></h2>
+
+                    {% if comments is empty %}
+                        <p class="muted">Pas encore de message. Une question sur l'état d'un livre ? Lance la discussion.</p>
+                    {% else %}
+                        <div class="comments">
+                            {% for comment in comments %}
+                                <article class="comment">
+                                    {{ ui.avatar(comment.user) }}
+                                    <div>
+                                        <div class="comment__head">
+                                            <strong>{{ comment.user.username }}</strong>
+                                            {% if comment.user.id == seller.id %}<span class="badge badge--green">Vendeur</span>{% endif %}
+                                            <span>{{ comment.createdAt|date('d/m/Y à H:i') }}</span>
+                                        </div>
+                                        <p>{{ comment.content|nl2br }}</p>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% if app.user %}
+                        <form method="post" action="{{ path('comment_add', {id: announcement.id}) }}" class="form panel panel--soft" style="margin-top:20px">
+                            <input type="hidden" name="_token" value="{{ csrf_token('comment_' ~ announcement.id) }}">
+                            <label for="comment-content" style="margin-top:0">Ta question ou ton avis</label>
+                            <textarea id="comment-content" name="content" rows="3" minlength="3" maxlength="1000" required placeholder="Par exemple : la couverture est-elle abîmée ?"></textarea>
+                            <div class="form-actions" style="margin-top:12px">
+                                <button type="submit" class="btn btn-primary">Publier</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p class="muted" style="margin-top:16px"><a href="{{ path('app_login') }}">Connecte-toi</a> pour poser une question.</p>
+                    {% endif %}
+                </section>
             </div>
-        {% else %}
-            <p class="meta">Aucun livre actif rattaché à cette annonce.</p>
-        {% endfor %}
-    </article>
+        </div>
+    </div>
 {% endblock %}

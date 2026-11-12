@@ -15,6 +15,7 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
         main:
+            user_checker: App\Security\UserChecker
             lazy: true
             provider: app_user_provider
             custom_authenticator: App\Security\LoginFormAuthenticator
