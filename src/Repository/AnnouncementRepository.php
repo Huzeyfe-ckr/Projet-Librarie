@@ -74,7 +74,7 @@ class AnnouncementRepository extends ServiceEntityRepository
 
         if (null !== $term && '' !== $term) {
             $qb->andWhere('a.title LIKE :term OR a.description LIKE :term')
-                ->setParameter('term', '%' . $term . '%');
+                ->setParameter('term', '%'.$term.'%');
         }
 
         return new Paginator($qb, false);

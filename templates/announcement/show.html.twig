@@ -88,7 +88,7 @@
                             <dt>États</dt>
                             <dd>
                                 {% for item in lot.conditions %}
-                                    <span class="badge badge--outline">{{ item.count }} × {{ ui.condition_label(item.condition) }}</span>
+                                    <span class="badge badge--outline">{{ item.count }} × {{ item.condition.label }}</span>
                                 {% endfor %}
                             </dd>
                         </div>

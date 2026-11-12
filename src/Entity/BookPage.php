@@ -29,7 +29,12 @@ class BookPage
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $inactivatedAt = null;
-    
+
+    public function __construct()
+    {
+        $this->uploadedAt = new \DateTimeImmutable();
+    }
+
     public function getId(): ?int
     {
         return $this->id;

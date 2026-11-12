@@ -1,5 +1,5 @@
 <?php
-// src/Security/UserChecker.php
+
 namespace App\Security;
 
 use App\Entity\User;

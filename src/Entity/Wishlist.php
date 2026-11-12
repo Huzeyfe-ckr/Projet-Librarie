@@ -31,7 +31,10 @@ class Wishlist
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $inactivatedAt = null;
 
-
+    public function __construct()
+    {
+        $this->addedAt = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {

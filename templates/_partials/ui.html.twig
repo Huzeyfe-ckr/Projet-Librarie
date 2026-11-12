@@ -36,61 +36,29 @@
     <span class="avatar avatar--{{ _self.tone(user ? user.id : 0) }} {{ size ? 'avatar--' ~ size }}" aria-hidden="true">{{ name|slice(0, 2) }}</span>
 {% endmacro %}
 
-{# ---------- Libellés en français ---------- #}
-
-{% macro type_label(type) -%}
-    {{- {donation: 'Don', sale: 'Vente'}[type.value] ?? type.name -}}
-{%- endmacro %}
+{# ---------- Badges des enums ----------
+   Les libellés et couleurs sont définis dans les enums (src/Enum) :
+   label(), color() et level(). Ici on ne fait que l'affichage. #}
 
 {% macro type_badge(type) %}
-    {% if type.value == 'donation' %}
-        <span class="badge badge--green">♥ Don</span>
-    {% else %}
-        <span class="badge badge--ochre">Vente</span>
-    {% endif %}
+    <span class="badge badge--{{ type.color }}">{{ type.value == 'donation' ? '♥ ' }}{{ type.label }}</span>
 {% endmacro %}
 
-{% macro condition_label(condition) -%}
-    {{- {
-        new: 'Neuf',
-        very_good: 'Très bon état',
-        good: 'Bon état',
-        acceptable: 'État correct',
-        poor: 'Abîmé'
-    }[condition.value] ?? condition.name -}}
-{%- endmacro %}
-
 {% macro condition(condition) %}
-    {% set level = {new: 5, very_good: 4, good: 3, acceptable: 2, poor: 1}[condition.value] ?? 0 %}
-    <span class="condition" title="{{ _self.condition_label(condition) }}">
+    <span class="condition" title="{{ condition.label }}">
         <span class="condition__bar" aria-hidden="true">
-            {% for i in 1..5 %}<i class="{{ i <= level ? 'on' }}"></i>{% endfor %}
+            {% for i in 1..5 %}<i class="{{ i <= condition.level ? 'on' }}"></i>{% endfor %}
         </span>
-        {{ _self.condition_label(condition) }}
+        {{ condition.label }}
     </span>
 {% endmacro %}
 
 {% macro announcement_status(status) %}
-    {% set map = {
-        available: ['Disponible', 'green'],
-        reserved: ['Réservé', 'ochre'],
-        completed: ['Terminé', 'slate'],
-        cancelled: ['Annulé', 'danger']
-    } %}
-    {% set s = map[status.value] ?? [status.name, ''] %}
-    <span class="badge badge--dot badge--{{ s[1] }}">{{ s[0] }}</span>
+    <span class="badge badge--dot badge--{{ status.color }}">{{ status.label }}</span>
 {% endmacro %}
 
 {% macro exchange_status(status) %}
-    {% set map = {
-        pending: ['En attente', 'ochre'],
-        accepted: ['Accepté', 'green'],
-        refused: ['Refusé', 'danger'],
-        completed: ['Terminé', 'slate'],
-        cancelled: ['Annulé', 'danger']
-    } %}
-    {% set s = map[status.value] ?? [status.name, ''] %}
-    <span class="badge badge--dot badge--{{ s[1] }}">{{ s[0] }}</span>
+    <span class="badge badge--dot badge--{{ status.color }}">{{ status.label }}</span>
 {% endmacro %}
 
 {% macro price(announcement) %}

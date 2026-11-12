@@ -31,6 +31,11 @@ class Message
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $inactivatedAt = null;
 
+    public function __construct()
+    {
+        $this->sentAt = new \DateTimeImmutable();
+    }
+
     public function getId(): ?int
     {
         return $this->id;

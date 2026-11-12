@@ -4,9 +4,10 @@ namespace App\Controller\Admin;
 
 use App\Entity\Exchange;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 class ExchangeCrudController extends AbstractCrudController
 {
@@ -15,14 +16,17 @@ class ExchangeCrudController extends AbstractCrudController
         return Exchange::class;
     }
 
-    /*
     public function configureFields(string $pageName): iterable
     {
-        return [
-            IdField::new('id'),
-            TextField::new('title'),
-            TextEditorField::new('description'),
-        ];
+        yield IdField::new('id')->hideOnForm();
+        yield AssociationField::new('announcement', 'Annonce');
+        yield AssociationField::new('requester', 'Demandeur');
+
+        // Les libellés viennent de ExchangeStatus::label()
+        yield ChoiceField::new('status', 'Statut');
+
+        yield DateTimeField::new('initiatedAt', 'Demandé le')
+            ->setFormTypeOption('disabled', true);
+        yield DateTimeField::new('completedAt', 'Terminé le');
     }
-    */
 }

@@ -29,7 +29,7 @@ class CommentController extends AbstractController
 
         $back = $this->redirectToRoute('announcement_show', ['id' => $id, '_fragment' => 'comments']);
 
-        if (!$this->isCsrfTokenValid('comment_' . $id, $request->request->getString('_token'))) {
+        if (!$this->isCsrfTokenValid('comment_'.$id, $request->request->getString('_token'))) {
             $this->addFlash('error', 'Session expirée, réessaie.');
 
             return $back;
@@ -50,8 +50,7 @@ class CommentController extends AbstractController
         $comment = (new Comment())
             ->setAnnouncement($announcement)
             ->setUser($user)
-            ->setContent($content)
-            ->setCreatedAt(new \DateTimeImmutable());
+            ->setContent($content);
 
         $em->persist($comment);
         $em->flush();

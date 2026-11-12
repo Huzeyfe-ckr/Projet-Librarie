@@ -223,4 +223,10 @@ class Announcement
 
         return $this;
     }
+
+    /** Libellé affiché dans les listes déroulantes (EasyAdmin, formulaires). */
+    public function __toString(): string
+    {
+        return sprintf('#%d %s', $this->id, $this->title);
+    }
 }

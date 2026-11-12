@@ -3,7 +3,6 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Book;
-use App\Enum\BookCondition;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -26,8 +25,7 @@ class BookCrudController extends AbstractCrudController
         yield TextField::new('isbn', 'ISBN')->hideOnIndex();
         yield TextField::new('genre', 'Genre');
 
-        yield ChoiceField::new('bookCondition', 'État')
-            ->setChoices(BookCondition::cases());
+        yield ChoiceField::new('bookCondition', 'État');
 
         yield AssociationField::new('announcement', 'Annonce');
 

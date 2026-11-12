@@ -204,9 +204,9 @@ class Book
 
         return $this;
     }
-        public function __toString(): string
-    {
-        return (string) $this->title;   
-    }
 
+    public function __toString(): string
+    {
+        return (string) $this->title;
+    }
 }

@@ -3,8 +3,6 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Announcement;
-use App\Enum\AnnouncementStatus;
-use App\Enum\AnnouncementType;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -27,10 +25,8 @@ class AnnouncementCrudController extends AbstractCrudController
         yield TextField::new('title', 'Titre');
         yield AssociationField::new('user', 'Publié par');
 
-        yield ChoiceField::new('type', 'Type')
-            ->setChoices(AnnouncementType::cases());
-        yield ChoiceField::new('status', 'Statut')
-            ->setChoices(AnnouncementStatus::cases());
+        yield ChoiceField::new('type', 'Type');
+        yield ChoiceField::new('status', 'Statut');
 
         yield MoneyField::new('price', 'Prix')
             ->setCurrency('EUR')

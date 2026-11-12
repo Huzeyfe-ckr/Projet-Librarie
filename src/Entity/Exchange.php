@@ -37,7 +37,6 @@ class Exchange
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $completedAt = null;
 
-
     /**
      * @var Collection<int, Message>
      */
