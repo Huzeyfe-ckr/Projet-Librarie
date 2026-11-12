@@ -3,6 +3,8 @@
 Revue du code au 12/11/2026 (entités, contrôleurs, formulaires, repositories, templates, CI).
 Coche au fur et à mesure. L'ordre conseillé est en bas du fichier.
 
+Cases : `[x]` fait · `[~]` en partie · `[ ]` à faire
+
 Légende : 🔴 bug / sécurité · 🟠 qualité du code · 🟢 nouvelle fonctionnalité · 🎨 interface · 🧪 tests et outillage
 
 ---
@@ -39,7 +41,7 @@ Légende : 🔴 bug / sécurité · 🟠 qualité du code · 🟢 nouvelle fonct
 ## 🟠 2. Qualité du code (lisible et compréhensible)
 
 ### Architecture
-- [ ] **Sortir la logique métier des contrôleurs** et la mettre dans des services :
+- [~] **Sortir la logique métier des contrôleurs** et la mettre dans des services : *(fait pour les échanges avec `ExchangeManager` ; reste `AnnouncementPublisher`)*
   - `src/Service/AnnouncementPublisher.php` reçoit les données du formulaire et crée l'annonce et ses livres. C'est le contenu actuel de `BookController::new()`.
   - `src/Service/ExchangeManager.php` gère `request()`, `accept()`, `refuse()`, `complete()` et `cancel()`, avec les changements de statut de l'annonce.
 - [ ] **Remplacer la validation faite à la main par des FormType** :
@@ -47,15 +49,15 @@ Légende : 🔴 bug / sécurité · 🟠 qualité du code · 🟢 nouvelle fonct
   - `ExchangeController::request()` : créer `ExchangeRequestType` pour le message.
   - Les formulaires gèrent déjà le CSRF : tu peux supprimer les `isCsrfTokenValid` manuels.
 - [ ] **Mettre les règles de validation sur les entités** (`#[Assert\NotBlank]`, `#[Assert\Length]`, `#[Assert\PositiveOrZero]` sur `price`…) plutôt que seulement dans les formulaires. Elles s'appliqueront alors aussi dans EasyAdmin.
-- [ ] **Créer des Voters** au lieu des `if` de droits dans les contrôleurs :
+- [~] **Créer des Voters** au lieu des `if` de droits dans les contrôleurs : *(`ExchangeVoter` fait ; reste `AnnouncementVoter`)*
   - `ExchangeVoter` : `VIEW` (demandeur ou propriétaire), `ACCEPT`, `REFUSE` et `COMPLETE` (propriétaire seulement), `CANCEL` (demandeur).
   - `AnnouncementVoter` : `EDIT` et `DELETE` (propriétaire ou admin), `REQUEST` (connecté, pas propriétaire, annonce disponible).
   - Usage : `#[IsGranted('VIEW', 'exchange')]` dans les contrôleurs et `is_granted('EDIT', announcement)` dans Twig.
 - [ ] **Ajouter les relations inverses manquantes** : `Announcement::$user` → `User::$announcements` et `Book::$announcement` → `Announcement::$books`. Cela permet d'écrire `announcement.books` dans Twig au lieu de passer `booksByAnnouncement` partout.
 
 ### Entités et enums
-- [ ] Initialiser les dates dans le constructeur, comme `Announcement`, `Exchange` et `User` le font déjà : `Comment::createdAt`, `Message::sentAt`, `BookPage::uploadedAt` et `Wishlist::addedAt`. Les contrôleurs n'auront plus à appeler `setCreatedAt(new \DateTimeImmutable())`.
-- [ ] **Mettre les libellés en français dans les enums** plutôt que dans les macros Twig :
+- [x] Initialiser les dates dans le constructeur, comme `Announcement`, `Exchange` et `User` le font déjà : `Comment::createdAt`, `Message::sentAt`, `BookPage::uploadedAt` et `Wishlist::addedAt`. Les contrôleurs n'auront plus à appeler `setCreatedAt(new \DateTimeImmutable())`.
+- [x] **Mettre les libellés en français dans les enums** plutôt que dans les macros Twig :
   ```php
   enum BookCondition: string {
       case New = 'new'; // ...
@@ -79,10 +81,15 @@ Légende : 🔴 bug / sécurité · 🟠 qualité du code · 🟢 nouvelle fonct
 - [ ] Découper `announcement/show.html.twig` (171 lignes) en partials : `_seller_panel.html.twig`, `_book_list.html.twig`, `_comments.html.twig`.
 - [ ] Formater les dates en français avec `twig/intl-extra` : `{{ date|format_date('long', locale='fr') }}` affiche « 12 novembre 2026 ».
 
+### Corrigé en plus pendant le nettoyage
+- [x] Admin : la liste des échanges et l'édition des livres et des échanges plantaient (erreur 500). Ajout des champs de `ExchangeCrudController` et de `Announcement::__toString()`.
+- [x] Locale par défaut passée de `en` à `fr` (`config/packages/translation.yaml`) : messages de validation en français.
+- [x] Suppression des blocs `configureFields` générés et commentés dans 5 CRUD EasyAdmin.
+
 ### Style de code
-- [ ] Indentation cassée : `SecurityController::login()`, `DashboardController::configureMenuItems()`, `Book::__toString()` et `User::__toString()`.
-- [ ] Commentaire inutile `// src/Security/UserChecker.php` et lignes vides en trop dans les repositories.
-- [ ] Ajouter **PHP-CS-Fixer** (`composer require --dev friendsofphp/php-cs-fixer`) avec les règles `@Symfony`, puis le lancer sur `src/`. Cela règle tous les points ci-dessus d'un coup.
+- [x] Indentation cassée : `SecurityController::login()`, `DashboardController::configureMenuItems()`, `Book::__toString()` et `User::__toString()`.
+- [x] Commentaire inutile `// src/Security/UserChecker.php` et lignes vides en trop dans les repositories.
+- [x] Ajouter **PHP-CS-Fixer** (`composer require --dev friendsofphp/php-cs-fixer`) avec les règles `@Symfony`, puis le lancer sur `src/`. Cela règle tous les points ci-dessus d'un coup.
 - [ ] Garder une règle claire : **le code en anglais, les textes affichés en français**. Choisir aussi un seul mot entre « commentaire » et « avis » dans l'interface.
 
 ---
@@ -90,12 +97,15 @@ Légende : 🔴 bug / sécurité · 🟠 qualité du code · 🟢 nouvelle fonct
 ## 🟢 3. Itérations (nouvelles fonctionnalités)
 
 ### Itération 1 — Workflow d'échange complet *(le plus important)*
-- [ ] Routes POST : `exchange_accept`, `exchange_refuse`, `exchange_complete` et `exchange_cancel`.
-- [ ] **Accepter** : échange → `accepted`, annonce → `reserved`, les autres demandes `pending` de cette annonce → `refused`.
-- [ ] **Terminer** : échange → `completed` avec `completedAt`, annonce → `completed`.
-- [ ] **Annuler** : échange → `cancelled`. Si l'échange était accepté, l'annonce redevient `available`.
-- [ ] Afficher les boutons d'action selon le rôle (vendeur ou demandeur) et le statut dans `exchange/show.html.twig`.
-- [ ] Ajouter un message système automatique dans la conversation (« alice a accepté la demande »).
+- [x] Route POST `exchange_transition` (`/exchanges/{id}/accept|refuse|complete|cancel`), protégée par CSRF et par `ExchangeVoter`.
+- [x] **Accepter** : échange → `accepted`, annonce → `reserved`, les autres demandes `pending` de cette annonce → `refused`.
+- [x] **Terminer** : échange → `completed` avec `completedAt`, annonce → `completed`.
+- [x] **Annuler** : échange → `cancelled`. Si l'échange était accepté, l'annonce redevient `available`.
+- [x] Afficher les boutons d'action selon le rôle (vendeur ou demandeur) et le statut dans `exchange/show.html.twig`.
+- [x] Message automatique dans la conversation à chaque action (« ✓ Demande acceptée… »), envoyé au nom de la personne qui agit.
+- [x] Confirmation avant refuser, annuler et terminer (`data-confirm`).
+- [ ] Afficher aussi les demandes reçues et leurs boutons sur la page de l'annonce, côté vendeur.
+- [ ] Différencier visuellement les messages automatiques (par exemple un champ `Message::$type`).
 
 ### Itération 2 — Photos des livres (`BookPage`)
 - [ ] Upload d'images dans le formulaire de publication : `FileType` avec `Assert\Image(maxSize: '5M')`, ou VichUploaderBundle.
@@ -181,12 +191,12 @@ Légende : 🔴 bug / sécurité · 🟠 qualité du code · 🟢 nouvelle fonct
 
 ## 📋 Ordre conseillé
 
-| # | Bloc | Pourquoi |
-|---|------|----------|
-| 1 | 🔴 Dépendances, dépôt Git, contraintes BDD et migration | Une base saine avant de construire dessus |
-| 2 | 🟠 Libellés dans les enums, dates dans les constructeurs, PHP-CS-Fixer | Rapide, et rend tout le reste plus lisible |
-| 3 | 🟢 Itération 1 (workflow d'échange) avec `ExchangeManager` et `ExchangeVoter` | Le cœur de l'app ne fonctionne pas encore |
-| 4 | 🧪 Fixtures Foundry et premiers tests | Pour ne plus rien casser ensuite |
-| 5 | 🟢 Itérations 2 et 3 (photos, mes annonces) | Le plus visible pour l'utilisateur |
-| 6 | 🎨 Passe interface : styles en ligne, AssetMapper, responsive, accessibilité | |
-| 7 | 🟢 Itérations 4 à 9 selon le temps | |
+| # | Bloc | Pourquoi | État |
+|---|------|----------|------|
+| 1 | 🔴 Dépendances, dépôt Git, contraintes BDD et migration | Une base saine avant de construire dessus | ✅ fait |
+| 2 | 🟠 Libellés dans les enums, dates dans les constructeurs, PHP-CS-Fixer | Rapide, et rend tout le reste plus lisible | ✅ fait |
+| 3 | 🟢 Itération 1 (workflow d'échange) avec `ExchangeManager` et `ExchangeVoter` | Le cœur de l'app ne fonctionne pas encore | ✅ fait |
+| 4 | 🧪 Fixtures Foundry et premiers tests | Pour ne plus rien casser ensuite | |
+| 5 | 🟢 Itérations 2 et 3 (photos, mes annonces) | Le plus visible pour l'utilisateur | |
+| 6 | 🎨 Passe interface : styles en ligne, AssetMapper, responsive, accessibilité | | |
+| 7 | 🟢 Itérations 4 à 9 selon le temps | | |

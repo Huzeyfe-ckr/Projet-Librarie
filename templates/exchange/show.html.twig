@@ -65,6 +65,30 @@
                 </div>
                 {{ ui.price(announcement) }}
                 <p class="small muted" style="margin-top:12px">Demande ouverte le {{ exchange.initiatedAt|date('d/m/Y') }}</p>
+
+                {# ===== Actions sur l'échange (droits vérifiés par ExchangeVoter) ===== #}
+                {% set actions = [
+                    {name: 'accept', right: 'EXCHANGE_ACCEPT', label: 'Accepter la demande', class: 'btn-primary'},
+                    {name: 'complete', right: 'EXCHANGE_COMPLETE', label: 'Livre remis : terminer', class: 'btn-primary', confirm: 'Confirmer que le livre a bien été remis ?'},
+                    {name: 'refuse', right: 'EXCHANGE_REFUSE', label: 'Refuser', class: 'btn-outline', confirm: 'Refuser cette demande ?'},
+                    {name: 'cancel', right: 'EXCHANGE_CANCEL', label: isOwner ? 'Annuler l’échange' : 'Annuler ma demande', class: 'btn-ghost', confirm: 'Annuler cet échange ?'},
+                ] %}
+                {% set allowed = actions|filter(a => is_granted(a.right, exchange)) %}
+
+                {% if allowed is not empty %}
+                    <div class="exchange-actions">
+                        {% for action in allowed %}
+                            <form method="post" action="{{ path('exchange_transition', {id: exchange.id, action: action.name}) }}" {% if action.confirm is defined %}data-confirm="{{ action.confirm }}"{% endif %}>
+                                <input type="hidden" name="_token" value="{{ csrf_token('exchange_' ~ action.name ~ '_' ~ exchange.id) }}">
+                                <button type="submit" class="btn {{ action.class }} btn-block">{{ action.label }}</button>
+                            </form>
+                        {% endfor %}
+                        {% if is_granted('EXCHANGE_ACCEPT', exchange) %}
+                            <p class="small muted">Accepter réserve l’annonce et refuse automatiquement les autres demandes en attente.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
                 <a href="{{ path('announcement_show', {id: announcement.id}) }}" class="btn btn-outline btn-block">Voir l'annonce</a>
             </aside>
         </div>
@@ -74,6 +98,13 @@
 {% block javascripts %}
 <script>
 (function () {
+    // Demande de confirmation avant les actions importantes (refuser, annuler, terminer)
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+        });
+    });
+
     // Toujours afficher le dernier message
     const chat = document.querySelector('[data-chat]');
     if (chat) chat.scrollTop = chat.scrollHeight;
