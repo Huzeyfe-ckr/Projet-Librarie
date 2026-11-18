@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class CommentController extends AbstractController
@@ -21,6 +22,7 @@ class CommentController extends AbstractController
         Request $request,
         AnnouncementRepository $announcements,
         EntityManagerInterface $em,
+        #[CurrentUser] User $user,
     ): Response {
         $announcement = $announcements->findActiveById($id);
         if (null === $announcement) {
@@ -28,6 +30,13 @@ class CommentController extends AbstractController
         }
 
         $back = $this->redirectToRoute('announcement_show', ['id' => $id, '_fragment' => 'comments']);
+
+        // Comme pour publier ou faire une demande : adresse email confirmée obligatoire
+        if (!$user->isVerified()) {
+            $this->addFlash('warning', 'Confirme d\'abord ton adresse email pour publier un avis (lien dans le bandeau en haut de la page).');
+
+            return $back;
+        }
 
         if (!$this->isCsrfTokenValid('comment_'.$id, $request->request->getString('_token'))) {
             $this->addFlash('error', 'Session expirée, réessaie.');
@@ -43,9 +52,6 @@ class CommentController extends AbstractController
 
             return $back;
         }
-
-        /** @var User $user */
-        $user = $this->getUser();
 
         $comment = (new Comment())
             ->setAnnouncement($announcement)
