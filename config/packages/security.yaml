@@ -19,6 +19,10 @@ security:
             lazy: true
             provider: app_user_provider
             custom_authenticator: App\Security\LoginFormAuthenticator
+            # Bloque les attaques par force brute : 5 essais ratés par minute (par email + IP)
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
             logout:
                 path: app_logout
                 target: app_login # <-- Redirige vers le login après la déconnexion
