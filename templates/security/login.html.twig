@@ -31,7 +31,7 @@
                     <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
                     <p class="small mt-3 m-0"><a href="{{ path('app_forgot_password_request') }}">Mot de passe oublié ?</a></p>
 
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" data-controller="csrf-protection">
 
                     <button type="submit" class="btn btn-primary btn-block btn-lg mt-6">Se connecter</button>
                 </form>
