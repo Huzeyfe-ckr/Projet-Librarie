@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Form\BookPublicationType;
 use App\Security\Voter\AnnouncementVoter;
 use App\Service\AnnouncementPublisher;
+use App\Service\ImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +29,6 @@ class BookController extends AbstractController
             return $this->redirectToRoute('announcement_index');
         }
 
-        // Une ligne de livre vide au départ
         $form = $this->createForm(BookPublicationType::class, ['books' => [[]]]);
         $form->handleRequest($request);
 
@@ -49,18 +49,20 @@ class BookController extends AbstractController
         ]);
     }
 
-    /**
-     * Supprime une photo depuis la page de modification de l'annonce (soft delete).
-     */
     #[Route('/photos/{id}/delete', name: 'book_page_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function deletePhoto(BookPage $page, Request $request, EntityManagerInterface $em): Response
-    {
+    public function deletePhoto(
+        BookPage $page,
+        Request $request,
+        EntityManagerInterface $em,
+        ImageStorage $storage,
+    ): Response {
         $announcement = $page->getBook()->getAnnouncement();
         $this->denyAccessUnlessGranted(AnnouncementVoter::EDIT, $announcement, 'Tu ne peux pas modifier cette annonce.');
 
         if ($this->isCsrfTokenValid('book_page_delete_'.$page->getId(), $request->request->getString('_token'))) {
             $page->setInactivatedAt(new \DateTimeImmutable());
             $em->flush();
+            $storage->delete($page->getImgUrl());
             $this->addFlash('success', 'Photo supprimée.');
         } else {
             $this->addFlash('error', 'Session expirée, réessaie.');

@@ -10,6 +10,8 @@ use App\Entity\Message;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
@@ -43,6 +45,19 @@ class DashboardController extends AbstractDashboardController
     {
         return Dashboard::new()
             ->setTitle('Administration');
+    }
+
+    /**
+     * Actions communes à tous les CRUD : pas de suppression définitive.
+     *
+     * Le site repose sur la suppression douce (inactivatedAt / deletedAt) et les entités sont liées
+     * entre elles (annonce → livres → photos, échange → messages) : un DELETE SQL échouerait sur une
+     * clé étrangère ou effacerait les données d'autres utilisateurs.
+     */
+    public function configureActions(): Actions
+    {
+        return parent::configureActions()
+            ->disable(Action::DELETE, Action::BATCH_DELETE);
     }
 
     public function configureMenuItems(): iterable

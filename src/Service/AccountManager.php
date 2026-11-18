@@ -34,8 +34,10 @@ final class AccountManager
     public function updateProfile(User $user, ?UploadedFile $avatar, bool $removeAvatar): void
     {
         if (null !== $avatar) {
+            $this->storage->delete($user->getAvatarUrl());
             $user->setAvatarUrl($this->storage->store($avatar, 'avatars'));
         } elseif ($removeAvatar) {
+            $this->storage->delete($user->getAvatarUrl());
             $user->setAvatarUrl(null);
         }
 
@@ -88,6 +90,7 @@ final class AccountManager
 
         // 4. Anonymisation : plus aucune donnée personnelle
         $id = $user->getId();
+        $this->storage->delete($user->getAvatarUrl()); // fichier de l'avatar effacé du disque
         $user
             ->setEmail(\sprintf('supprime-%d@bookshare.invalid', $id))
             ->setUsername(\sprintf('supprime-%d', $id))

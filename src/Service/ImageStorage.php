@@ -32,4 +32,25 @@ final class ImageStorage
 
         return $this->publicUrl.'/'.$folder.'/'.$filename;
     }
+
+    public function delete(?string $url): void
+    {
+        if (null === $url) {
+            return;
+        }
+
+        if (!str_starts_with($url, $this->publicUrl.'/')) {
+            return;
+        }
+
+        if (str_contains($url, '..')) {
+            return;
+        }
+
+        $path = $this->directory.substr($url, \strlen($this->publicUrl));
+
+        if (file_exists($path)) {
+            unlink($path);
+        }
+    }
 }
