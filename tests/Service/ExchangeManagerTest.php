@@ -106,11 +106,40 @@ final class ExchangeManagerTest extends KernelTestCase
 
     public function testCannotAcceptWhenAnnouncementAlreadyReserved(): void
     {
-        $exchange = ExchangeFactory::createOne();
-        $exchange->getAnnouncement()->setStatus(AnnouncementStatus::Reserved);
+        // L'état doit être en base : chaque transition relit l'annonce avant de décider
+        $exchange = ExchangeFactory::createOne([
+            'announcement' => AnnouncementFactory::new(['status' => AnnouncementStatus::Reserved]),
+        ]);
 
         $this->expectException(ExchangeException::class);
         $this->manager->accept($exchange, $exchange->getAnnouncement()->getUser());
+    }
+
+    /**
+     * Deux vendeurs… ou deux onglets : la demande A est acceptée par une autre requête pendant
+     * que celle-ci a encore en mémoire une annonce « disponible ». La transition doit relire
+     * la base (verrou + refresh) et refuser d'accepter B.
+     */
+    public function testAcceptRereadsAnnouncementChangedByAnotherRequest(): void
+    {
+        $announcement = AnnouncementFactory::createOne();
+        $first = ExchangeFactory::createOne(['announcement' => $announcement]);
+        $second = ExchangeFactory::createOne(['announcement' => $announcement]);
+
+        // Simule l'autre requête : elle a déjà enregistré l'acceptation de A, directement en base
+        $connection = self::getContainer()->get('doctrine')->getConnection();
+        $connection->update('announcement', ['status' => AnnouncementStatus::Reserved->value], ['id' => $announcement->getId()]);
+        $connection->update('exchange', ['status' => ExchangeStatus::Accepted->value], ['id' => $first->getId()]);
+        self::assertSame(AnnouncementStatus::Available, $announcement->getStatus(), 'en mémoire, l\'annonce paraît encore disponible');
+
+        try {
+            $this->manager->accept($second, $announcement->getUser());
+            self::fail('La deuxième acceptation aurait dû être refusée.');
+        } catch (ExchangeException) {
+        }
+
+        self::assertSame(AnnouncementStatus::Reserved, $announcement->getStatus());
+        self::assertSame(ExchangeStatus::Pending, $second->getStatus(), 'B reste en attente : rien n\'a été enregistré');
     }
 
     public function testCannotSendMessageInClosedExchange(): void

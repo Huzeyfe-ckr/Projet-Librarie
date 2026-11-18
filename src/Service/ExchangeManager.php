@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Enum\AnnouncementStatus;
 use App\Enum\ExchangeStatus;
 use App\Exception\ExchangeException;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -25,6 +26,9 @@ use Doctrine\ORM\EntityManagerInterface;
  *
  * Les droits (qui peut faire quoi) sont vérifiés par ExchangeVoter dans le contrôleur ;
  * ce service vérifie seulement que la transition est possible.
+ *
+ * Concurrence : chaque transition se fait dans une transaction qui verrouille l'annonce
+ * (voir transition()), pour que deux clics simultanés ne puissent pas réserver deux fois la même annonce.
  */
 final class ExchangeManager
 {
@@ -76,34 +80,35 @@ final class ExchangeManager
      */
     public function accept(Exchange $exchange, User $actor): void
     {
-        $this->assertStatus($exchange, [ExchangeStatus::Pending], 'Seule une demande en attente peut être acceptée.');
+        $this->transition($exchange, function () use ($exchange, $actor): void {
+            $this->assertStatus($exchange, [ExchangeStatus::Pending], 'Seule une demande en attente peut être acceptée.');
 
-        $announcement = $exchange->getAnnouncement();
-        if (AnnouncementStatus::Available !== $announcement->getStatus()) {
-            throw new ExchangeException('Cette annonce est déjà réservée pour un autre échange.');
-        }
-
-        $exchange->setStatus(ExchangeStatus::Accepted);
-        $announcement->setStatus(AnnouncementStatus::Reserved);
-        $this->addMessage($exchange, $actor, '✓ Demande acceptée. Organisez la remise du livre ici.');
-
-        foreach ($announcement->getExchanges() as $other) {
-            if ($other !== $exchange && ExchangeStatus::Pending === $other->getStatus()) {
-                $other->setStatus(ExchangeStatus::Refused);
-                $this->addMessage($other, $actor, 'Désolé, cette annonce a été réservée pour quelqu\'un d\'autre.');
+            $announcement = $exchange->getAnnouncement();
+            if (AnnouncementStatus::Available !== $announcement->getStatus()) {
+                throw new ExchangeException('Cette annonce est déjà réservée pour un autre échange.');
             }
-        }
 
-        $this->em->flush();
+            $exchange->setStatus(ExchangeStatus::Accepted);
+            $announcement->setStatus(AnnouncementStatus::Reserved);
+            $this->addMessage($exchange, $actor, '✓ Demande acceptée. Organisez la remise du livre ici.');
+
+            foreach ($announcement->getExchanges() as $other) {
+                if ($other !== $exchange && ExchangeStatus::Pending === $other->getStatus()) {
+                    $other->setStatus(ExchangeStatus::Refused);
+                    $this->addMessage($other, $actor, 'Désolé, cette annonce a été réservée pour quelqu\'un d\'autre.');
+                }
+            }
+        });
     }
 
     public function refuse(Exchange $exchange, User $actor): void
     {
-        $this->assertStatus($exchange, [ExchangeStatus::Pending], 'Seule une demande en attente peut être refusée.');
+        $this->transition($exchange, function () use ($exchange, $actor): void {
+            $this->assertStatus($exchange, [ExchangeStatus::Pending], 'Seule une demande en attente peut être refusée.');
 
-        $exchange->setStatus(ExchangeStatus::Refused);
-        $this->addMessage($exchange, $actor, '✕ Demande refusée.');
-        $this->em->flush();
+            $exchange->setStatus(ExchangeStatus::Refused);
+            $this->addMessage($exchange, $actor, '✕ Demande refusée.');
+        });
     }
 
     /**
@@ -111,15 +116,15 @@ final class ExchangeManager
      */
     public function complete(Exchange $exchange, User $actor): void
     {
-        $this->assertStatus($exchange, [ExchangeStatus::Accepted], 'Seul un échange accepté peut être terminé.');
+        $this->transition($exchange, function () use ($exchange, $actor): void {
+            $this->assertStatus($exchange, [ExchangeStatus::Accepted], 'Seul un échange accepté peut être terminé.');
 
-        $exchange
-            ->setStatus(ExchangeStatus::Completed)
-            ->setCompletedAt(new \DateTimeImmutable());
-        $exchange->getAnnouncement()->setStatus(AnnouncementStatus::Completed);
-        $this->addMessage($exchange, $actor, '★ Échange terminé. Merci !');
-
-        $this->em->flush();
+            $exchange
+                ->setStatus(ExchangeStatus::Completed)
+                ->setCompletedAt(new \DateTimeImmutable());
+            $exchange->getAnnouncement()->setStatus(AnnouncementStatus::Completed);
+            $this->addMessage($exchange, $actor, '★ Échange terminé. Merci !');
+        });
     }
 
     /**
@@ -127,15 +132,52 @@ final class ExchangeManager
      */
     public function cancel(Exchange $exchange, User $actor): void
     {
-        $this->assertStatus($exchange, [ExchangeStatus::Pending, ExchangeStatus::Accepted], 'Cet échange ne peut plus être annulé.');
+        $this->transition($exchange, function () use ($exchange, $actor): void {
+            $this->assertStatus($exchange, [ExchangeStatus::Pending, ExchangeStatus::Accepted], 'Cet échange ne peut plus être annulé.');
 
-        if (ExchangeStatus::Accepted === $exchange->getStatus()) {
-            $exchange->getAnnouncement()->setStatus(AnnouncementStatus::Available);
+            if (ExchangeStatus::Accepted === $exchange->getStatus()) {
+                $exchange->getAnnouncement()->setStatus(AnnouncementStatus::Available);
+            }
+
+            $exchange->setStatus(ExchangeStatus::Cancelled);
+            $this->addMessage($exchange, $actor, '✕ Échange annulé.');
+        });
+    }
+
+    /**
+     * Exécute un changement de statut à l'abri des requêtes simultanées.
+     *
+     * 1. On ouvre une transaction.
+     * 2. On relit l'annonce avec un verrou (SELECT … FOR UPDATE) : une deuxième requête qui veut
+     *    toucher à la même annonce attend ici que la première ait fini (commit ou rollback).
+     * 3. On relit aussi l'échange : son statut a pu changer pendant l'attente (ex. déjà refusé).
+     * 4. Les vérifications (assertStatus…) se font donc sur des données à jour, puis on enregistre.
+     *
+     * On verrouille toujours l'annonce avant l'échange, dans le même ordre partout, pour éviter
+     * que deux requêtes s'attendent l'une l'autre (deadlock).
+     *
+     * Pas de wrapInTransaction() : il fermerait l'EntityManager à chaque ExchangeException
+     * (une simple erreur métier comme « déjà réservée »), et la suite de la requête planterait.
+     *
+     * @param callable(): void $change
+     */
+    private function transition(Exchange $exchange, callable $change): void
+    {
+        $this->em->beginTransaction();
+
+        try {
+            $this->em->refresh($exchange->getAnnouncement(), LockMode::PESSIMISTIC_WRITE);
+            $this->em->refresh($exchange, LockMode::PESSIMISTIC_WRITE);
+
+            $change();
+
+            $this->em->flush();
+            $this->em->commit();
+        } catch (\Throwable $e) {
+            $this->em->rollback();
+
+            throw $e;
         }
-
-        $exchange->setStatus(ExchangeStatus::Cancelled);
-        $this->addMessage($exchange, $actor, '✕ Échange annulé.');
-        $this->em->flush();
     }
 
     /**
