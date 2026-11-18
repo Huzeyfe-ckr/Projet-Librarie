@@ -9,6 +9,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: AnnouncementRepository::class)]
 class Announcement
@@ -23,18 +25,26 @@ class Announcement
     private ?User $user = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Donne un titre à l\'annonce.', normalizer: 'trim')]
+    #[Assert\Length(max: 255)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
     private ?string $description = null;
 
     #[ORM\Column(enumType: AnnouncementType::class)]
+    #[Assert\NotNull(message: 'Choisis un type d\'annonce.')]
     private ?AnnouncementType $type = null;
 
+    // DECIMAL(10, 2) : 8 chiffres avant la virgule au maximum
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    #[Assert\PositiveOrZero(message: 'Le prix ne peut pas être négatif.')]
+    #[Assert\LessThan(100000000, message: 'Ce prix est trop élevé.')]
     private ?string $price = null;
 
     #[ORM\Column(enumType: AnnouncementStatus::class)]
+    #[Assert\NotNull]
     private ?AnnouncementStatus $status = null;
 
     #[ORM\Column(nullable: true)]
@@ -222,6 +232,22 @@ class Announcement
         }
 
         return $this;
+    }
+
+    /**
+     * Règle qui dépend de deux champs : une vente a un prix, un don n'en a pas.
+     * (La même règle existe dans BookPublicationType pour le formulaire du site.)
+     */
+    #[Assert\Callback]
+    public function validatePrice(ExecutionContextInterface $context): void
+    {
+        if (AnnouncementType::Sale === $this->type && null === $this->price) {
+            $context->buildViolation('Indique un prix pour une vente.')->atPath('price')->addViolation();
+        }
+
+        if (AnnouncementType::Donation === $this->type && null !== $this->price) {
+            $context->buildViolation('Un don ne peut pas avoir de prix.')->atPath('price')->addViolation();
+        }
     }
 
     /** Libellé affiché dans les listes déroulantes (EasyAdmin, formulaires). */

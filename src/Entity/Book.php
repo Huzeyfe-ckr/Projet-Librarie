@@ -7,6 +7,7 @@ use App\Repository\BookRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: BookRepository::class)]
 class Book
@@ -21,18 +22,24 @@ class Book
     private ?Announcement $announcement = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Indique le titre du livre.', normalizer: 'trim')]
+    #[Assert\Length(max: 255)]
     private ?string $title = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $author = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Isbn]
     private ?string $isbn = null;
 
     #[ORM\Column(enumType: BookCondition::class)]
+    #[Assert\NotNull(message: 'Indique l\'état du livre.')]
     private ?BookCondition $bookCondition = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $genre = null;
 
     #[ORM\Column(nullable: true)]
