@@ -17,7 +17,7 @@
     --green: #3d5a4a;
     --green-dark: #2d4437;
     --green-soft: #e3ebe4;
-    --terracotta: #a8603f;
+    --terracotta: #a6570e;
     --terracotta-soft: #f3e3d8;
     --ochre: #b8913f;
     --ochre-soft: #f3ead3;
@@ -111,6 +111,7 @@ p { margin: 0 0 1em; }
 .btn:hover { transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
 .btn-primary { background: var(--green); color: var(--paper); box-shadow: 0 6px 16px -8px rgba(45, 68, 55, .7); }
+.btn-admin { background: var(--terracotta); color: var(--paper); box-shadow: 0 6px 16px -8px rgba(168, 96, 63, .7); }
 .btn-primary:hover { background: var(--green-dark); color: var(--paper); }
 .btn-accent { background: #9c5838; color: var(--paper); } /* terracotta un peu plus foncé : texte lisible (4,8:1) */
 .btn-accent:hover { background: #924f31; color: var(--paper); }

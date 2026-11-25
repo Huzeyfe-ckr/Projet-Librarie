@@ -38,9 +38,6 @@
                     <a href="{{ path('announcement_mine') }}" class="nav__link {{ route == 'announcement_mine' ? 'is-active' }}">Mes annonces</a>
                     <a href="{{ path('exchange_index') }}" class="nav__link {{ route starts with 'exchange_' ? 'is-active' }}">Mes échanges</a>
                     <a href="{{ path('wishlist_index') }}" class="nav__link {{ route == 'wishlist_index' ? 'is-active' }}">Wishlist</a>
-                    {% if is_granted('ROLE_ADMIN') %}
-                        <a href="{{ path('admin') }}" class="nav__link">Admin</a>
-                    {% endif %}
                     <span class="nav__sep"></span>
                     {% import '_partials/ui.html.twig' as ui %}
                     <a href="{{ path('profile_edit') }}" class="nav__user {{ route == 'profile_edit' ? 'is-active' }}" title="Mon profil">{{ ui.avatar(app.user) }}{{ app.user.username }}</a>
@@ -48,6 +45,9 @@
                     <form method="post" action="{{ path('app_logout') }}" class="nav__logout">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}" data-controller="csrf-protection">
                         <button type="submit" class="btn btn-ghost">Déconnexion</button>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('admin') }}" class="btn btn-admin">Admin</a>
+                    {% endif %}
                     </form>
                 {% else %}
                     <span class="nav__sep"></span>

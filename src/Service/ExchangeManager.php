@@ -29,11 +29,15 @@ use Doctrine\ORM\EntityManagerInterface;
  *
  * Concurrence : chaque transition se fait dans une transaction qui verrouille l'annonce
  * (voir transition()), pour que deux clics simultanés ne puissent pas réserver deux fois la même annonce.
+ *
+ * Emails : l'autre participant est prévenu (ExchangeNotifier) APRÈS l'enregistrement en base,
+ * pour ne jamais annoncer un changement qui aurait finalement échoué.
  */
 final class ExchangeManager
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
+        private readonly ExchangeNotifier $notifier,
     ) {
     }
 
@@ -62,6 +66,8 @@ final class ExchangeManager
         $this->addMessage($exchange, $requester, $text);
         $this->em->flush();
 
+        $this->notifier->notify($exchange, $requester, ExchangeNotifier::REQUESTED, $text);
+
         return $exchange;
     }
 
@@ -71,8 +77,17 @@ final class ExchangeManager
             throw new ExchangeException('Cet échange est clos, tu ne peux plus y envoyer de message.');
         }
 
+        // Anti-spam : un email seulement quand la personne « prend la parole » (le message précédent
+        // venait de l'autre). Trois messages d'affilée = un seul email.
+        $previous = $this->lastMessage($exchange);
+        $startsNewTurn = null === $previous || $previous->getSender()->getId() !== $sender->getId();
+
         $this->addMessage($exchange, $sender, trim($content));
         $this->em->flush();
+
+        if ($startsNewTurn) {
+            $this->notifier->notify($exchange, $sender, ExchangeNotifier::MESSAGE, $content);
+        }
     }
 
     /**
@@ -80,7 +95,10 @@ final class ExchangeManager
      */
     public function accept(Exchange $exchange, User $actor): void
     {
-        $this->transition($exchange, function () use ($exchange, $actor): void {
+        /** @var Exchange[] $refusedOthers demandes refusées automatiquement, à prévenir après coup */
+        $refusedOthers = [];
+
+        $this->transition($exchange, function () use ($exchange, $actor, &$refusedOthers): void {
             $this->assertStatus($exchange, [ExchangeStatus::Pending], 'Seule une demande en attente peut être acceptée.');
 
             $announcement = $exchange->getAnnouncement();
@@ -96,9 +114,15 @@ final class ExchangeManager
                 if ($other !== $exchange && ExchangeStatus::Pending === $other->getStatus()) {
                     $other->setStatus(ExchangeStatus::Refused);
                     $this->addMessage($other, $actor, 'Désolé, cette annonce a été réservée pour quelqu\'un d\'autre.');
+                    $refusedOthers[] = $other;
                 }
             }
         });
+
+        $this->notifier->notify($exchange, $actor, ExchangeNotifier::ACCEPTED);
+        foreach ($refusedOthers as $other) {
+            $this->notifier->notify($other, $actor, ExchangeNotifier::RESERVED_FOR_SOMEONE_ELSE);
+        }
     }
 
     public function refuse(Exchange $exchange, User $actor): void
@@ -109,6 +133,8 @@ final class ExchangeManager
             $exchange->setStatus(ExchangeStatus::Refused);
             $this->addMessage($exchange, $actor, '✕ Demande refusée.');
         });
+
+        $this->notifier->notify($exchange, $actor, ExchangeNotifier::REFUSED);
     }
 
     /**
@@ -125,6 +151,8 @@ final class ExchangeManager
             $exchange->getAnnouncement()->setStatus(AnnouncementStatus::Completed);
             $this->addMessage($exchange, $actor, '★ Échange terminé. Merci !');
         });
+
+        $this->notifier->notify($exchange, $actor, ExchangeNotifier::COMPLETED);
     }
 
     /**
@@ -142,6 +170,8 @@ final class ExchangeManager
             $exchange->setStatus(ExchangeStatus::Cancelled);
             $this->addMessage($exchange, $actor, '✕ Échange annulé.');
         });
+
+        $this->notifier->notify($exchange, $actor, ExchangeNotifier::CANCELLED);
     }
 
     /**
@@ -188,6 +218,21 @@ final class ExchangeManager
         if (!\in_array($exchange->getStatus(), $allowed, true)) {
             throw new ExchangeException($error);
         }
+    }
+
+    /**
+     * Dernier message de la conversation (le plus grand id = le plus récent).
+     */
+    private function lastMessage(Exchange $exchange): ?Message
+    {
+        $last = null;
+        foreach ($exchange->getMessages() as $message) {
+            if (null === $last || $message->getId() > $last->getId()) {
+                $last = $message;
+            }
+        }
+
+        return $last;
     }
 
     private function addMessage(Exchange $exchange, User $sender, string $content): void

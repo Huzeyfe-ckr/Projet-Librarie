@@ -1,0 +1,33 @@
+{% extends 'emails/_layout.html.twig' %}
+
+{# Un seul template pour toutes les notifications d'échange : seul le texte change selon « event » (voir ExchangeNotifier). #}
+
+{% block content %}
+    {% set title = '« ' ~ announcement.title ~ ' »' %}
+
+    <p>Bonjour {{ recipient.username }},</p>
+
+    {% if event == 'requested' %}
+        <p><strong>{{ actor.username }}</strong> aimerait récupérer {{ title }} et t'a envoyé une demande.</p>
+    {% elseif event == 'accepted' %}
+        <p>Bonne nouvelle : <strong>{{ actor.username }}</strong> a accepté ta demande pour {{ title }}. Le livre t'est réservé, organisez la remise dans la conversation.</p>
+    {% elseif event == 'refused' %}
+        <p>Ta demande pour {{ title }} n'a pas été retenue. D'autres livres t'attendent sûrement sur BookShare !</p>
+    {% elseif event == 'reserved_for_someone_else' %}
+        <p>L'annonce {{ title }} a été réservée pour une autre personne, ta demande est donc close.</p>
+    {% elseif event == 'completed' %}
+        <p>L'échange pour {{ title }} est marqué comme terminé. Merci d'avoir fait circuler ce livre !</p>
+    {% elseif event == 'cancelled' %}
+        <p><strong>{{ actor.username }}</strong> a annulé l'échange pour {{ title }}.</p>
+    {% elseif event == 'message' %}
+        <p><strong>{{ actor.username }}</strong> t'a écrit à propos de {{ title }}.</p>
+    {% endif %}
+
+    {% if excerpt %}
+        <blockquote style="margin:20px 0;padding:12px 16px;border-left:3px solid #a8603f;background:#f6f1e8;border-radius:4px;">{{ excerpt }}</blockquote>
+    {% endif %}
+
+    <p style="margin:28px 0;">
+        <a href="{{ url('exchange_show', {id: exchange.id}) }}" style="background:#3d5a4a;color:#f6f1e8;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold;">Voir la conversation</a>
+    </p>
+{% endblock %}

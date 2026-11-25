@@ -22,6 +22,7 @@ class BookPublicationType extends AbstractType
 {
     public const MAX_BOOKS = 100;
 
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -65,7 +66,7 @@ class BookPublicationType extends AbstractType
                         maxMessage: 'Un pack contient au maximum {{ limit }} livres.',
                     ),
                 ],
-            ]);
+                ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

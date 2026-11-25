@@ -1,9 +1,12 @@
 -- Jeu de données de test (volumineux) pour la base `app`
 -- Mot de passe de tous les utilisateurs : password
 -- Comptes : admin@bookswap.test (ROLE_ADMIN), alice@bookswap.test, bob@bookswap.test, ...
+-- Compatible avec les 3 migrations (dont reset_password_request). Import : phpMyAdmin > base « app » > Importer.
+-- ⚠️ Vide toutes les tables avant de les remplir.
 SET NAMES utf8mb4;
 
 -- Vidage des tables (des enfants vers les parents pour respecter les clés étrangères)
+DELETE FROM `reset_password_request`;
 DELETE FROM `message`;
 DELETE FROM `exchange`;
 DELETE FROM `wishlist`;
@@ -13,6 +16,7 @@ DELETE FROM `book`;
 DELETE FROM `announcement`;
 DELETE FROM `user`;
 
+ALTER TABLE `reset_password_request` AUTO_INCREMENT = 1;
 ALTER TABLE `message` AUTO_INCREMENT = 1;
 ALTER TABLE `exchange` AUTO_INCREMENT = 1;
 ALTER TABLE `wishlist` AUTO_INCREMENT = 1;
