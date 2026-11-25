@@ -54,16 +54,16 @@ class BookItemType extends AbstractType
                 'label' => 'Photos',
                 'multiple' => true,
                 'required' => false,
-                'help' => \sprintf('Couverture, dos, pages abîmées… Jusqu\'à %d photos (JPEG, PNG ou WebP, 5 Mo max chacune).', self::MAX_PHOTOS),
+                'help' => \sprintf('Couverture, dos, pages abîmées… Jusqu\'à %d photos (JPEG, PNG ou WebP, 10 Mo max chacune).', self::MAX_PHOTOS),
                 'attr' => ['accept' => 'image/jpeg,image/png,image/webp'],
                 'constraints' => [
                     new Count(max: self::MAX_PHOTOS, maxMessage: '{{ limit }} photos maximum par livre.'),
                     new All([
                         new Image(
-                            maxSize: '5M',
+                            maxSize: '10M',
                             mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
                             mimeTypesMessage: 'Envoie une image JPEG, PNG ou WebP.',
-                            maxSizeMessage: 'Image trop lourde ({{ size }} {{ suffix }}), 5 Mo maximum.',
+                            maxSizeMessage: 'Image trop lourde ({{ size }} {{ suffix }}), 10 Mo maximum.',
                         ),
                     ]),
                 ],
